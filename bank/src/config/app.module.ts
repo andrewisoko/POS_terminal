@@ -4,6 +4,10 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {ConfigModule} from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
+import { Ledger } from 'src/modules/ledgers/entities/ledger.entity';
+import { Transaction } from 'typeorm';
+import { Customer } from 'src/modules/customers/entities/customer.entity';
+import { Account } from 'src/modules/accounts/entities/account.entity';
 
 
 
@@ -28,7 +32,13 @@ import { ConfigService } from '@nestjs/config';
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        synchronize:true
+        synchronize:true,
+        entities:[
+          Ledger,
+          Transaction,
+          Customer,
+          Account
+        ]
       }
     }
   })

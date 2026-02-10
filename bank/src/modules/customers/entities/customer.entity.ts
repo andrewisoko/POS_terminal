@@ -1,4 +1,4 @@
-import { Column,PrimaryColumn} from "typeorm";
+import { Column,PrimaryGeneratedColumn,CreateDateColumn} from "typeorm";
 import { Entity } from "typeorm";
 
 export enum STATUS {
@@ -22,7 +22,7 @@ export enum TIERS {
 @Entity("customers")
 export class Customer {
 
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn('uuid')
     id:string;
 
     @Column()
@@ -44,6 +44,6 @@ export class Customer {
     kyc_level:TIERS;
 
     
-    @Column()
+    @CreateDateColumn()
     created_at:Date;
 }
