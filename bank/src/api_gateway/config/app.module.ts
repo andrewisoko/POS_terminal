@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {ConfigModule} from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
 
 
 
@@ -18,7 +19,7 @@ import { ConfigService } from '@nestjs/config';
     }
   ),
   TypeOrmModule.forRootAsync({
-    imports:[ConfigModule],
+    imports:[ConfigModule,AuthModule],
     inject:[ConfigService],
     useFactory:(configService:ConfigService) => {
       console.log(configService.get<string>('DB_USER'))
