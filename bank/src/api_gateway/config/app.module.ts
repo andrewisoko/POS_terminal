@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import {ConfigModule} from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
+import { Terminal } from 'src/apps/web_terminal/entity/WT.entity';
 
 
 
@@ -31,7 +32,7 @@ import { AuthModule } from '../auth/auth.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         synchronize:true,
-        entities:[]
+        entities:[Terminal]
       }
     }
   })
