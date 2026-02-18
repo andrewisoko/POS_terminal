@@ -11,8 +11,8 @@ export class WebTerminalController{
 
     constructor(private readonly webTerminal:WebTerminal){}
 
-    @UseGuards(JwtAuthGuard,RolesGuard)
-    @Roles(Role.CUSTOMER)
+    // @UseGuards(JwtAuthGuard,RolesGuard)
+    // @Roles(Role.CUSTOMER)
     @Get('create-terminal')
     createWT(){
         return this.webTerminal.CreateWT()

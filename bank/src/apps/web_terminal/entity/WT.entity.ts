@@ -5,7 +5,7 @@ export enum Role {
     TERMINAL = "terminal"
 }
 
-Entity("terminals")
+@Entity("terminals")
 export class Terminal{
 
     @PrimaryGeneratedColumn()

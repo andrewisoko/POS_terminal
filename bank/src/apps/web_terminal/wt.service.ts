@@ -39,8 +39,8 @@ export class WebTerminal{
 
     async CreateWT(){
 
-            const serialNumber = this.generateSerialNum();
-            const signature = this.generateSignature();
+        const serialNumber = this.generateSerialNum();
+        const signature = this.generateSignature();
 
         const certTerminal = {
             serialNumber:Number(serialNumber),
