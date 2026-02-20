@@ -4,9 +4,9 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {ConfigModule} from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
-import { AuthModule } from '../auth/auth.module';
-import { Terminal } from 'src/apps/web_terminal/entity/wt.entity';
-import { WTModule } from 'src/apps/web_terminal/wt.module';
+import { AuthModule } from '../../services/auth/auth.module';
+import { Terminal } from 'src/services/merchant.service.ts/entity/wt.entity';
+import { WTModule } from 'src/services/merchant.service.ts/wt.module';
 
 
 

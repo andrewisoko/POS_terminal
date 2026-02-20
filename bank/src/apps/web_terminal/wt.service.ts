@@ -15,14 +15,14 @@ export class WebTerminal{
     ){}
 
     generateSerialNum(){
-        let randomNum = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)) + 1000000000000000n  /* using Big int since interger chosen overpass js number's precision limit. */
-        return randomNum.toString()
-    }
+        const randomNum = Math.floor(Math.floor(Math.random() * 999999 + 10000000))
+        return randomNum.toString()  
+      }
 
     generateSignature(){
         /* cheap imitation of sha256WithRSAEncryption algorithm output*/
 
-        let randomNum = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)) + 100000000000000000000n  
+        let randomNum = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)) + 100000000000000000000n /* using Big int since interger chosen overpass js number's precision limit. (20 digits)*/
         let objContainer =  randomNum.toString().split("");
 
         const objWithDots = () => { 
