@@ -5,7 +5,7 @@ export enum Role {
     TERMINAL = "terminal"
 }
 
-@Entity("terminals")
+@Entity("Terminal")
 export class Terminal{
 
     @PrimaryGeneratedColumn()
@@ -29,5 +29,8 @@ export class Terminal{
         default:Role.CUSTOMER
     })
     role:Role
+
+    @Column()
+    date:Date
 
 }

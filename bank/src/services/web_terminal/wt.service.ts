@@ -32,9 +32,7 @@ export class WebTerminal{
             return objContainer.join('')
         }
         }
-        console.log(objContainer)
         return objWithDots()
-
     }
 
 
@@ -56,6 +54,7 @@ export class WebTerminal{
         const terminal_token = this.jwtService.sign(certTerminal);
 
         await this.TerminalRepository.create(certTerminal)
+        await this.TerminalRepository.save({date:new Date(Date.now())})
         await this.TerminalRepository.save(certTerminal)
 
         return {terminal_token:terminal_token}

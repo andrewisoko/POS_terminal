@@ -9,9 +9,7 @@ import { Terminal } from 'src/services/web_terminal/entity/wt.entity';
 import { WTModule } from 'src/services/web_terminal/wt.module';
 import { TransactionModule } from 'src/services/orchestrator/transaction.module';
 import { Party } from 'src/services/party_service/entity/party.entity';
-import { Transaction } from 'typeorm';
-
-
+import { Transaction } from 'src/services/orchestrator/entity/transaction.entity';
 
 
 
