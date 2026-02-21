@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './config/app.module';
-import { Redirect } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

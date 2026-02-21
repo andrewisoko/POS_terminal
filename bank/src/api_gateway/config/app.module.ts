@@ -8,6 +8,8 @@ import { AuthModule } from '../../services/auth/auth.module';
 import { Terminal } from 'src/services/web_terminal/entity/wt.entity';
 import { WTModule } from 'src/services/web_terminal/wt.module';
 import { TransactionModule } from 'src/services/orchestrator/transaction.module';
+import { Party } from 'src/services/party_service/entity/party.entity';
+import { Transaction } from 'typeorm';
 
 
 
@@ -39,7 +41,7 @@ import { TransactionModule } from 'src/services/orchestrator/transaction.module'
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         synchronize:true,
-        entities:[Terminal]
+        entities:[Terminal,Party,Transaction]
       }
     }
   })

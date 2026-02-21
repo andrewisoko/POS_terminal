@@ -8,21 +8,24 @@ import { TokenisationService } from "../tokenisation_service/tokenisation.servic
 @Controller("transaction")
 export class TransactionController {
 
-    constructor( private readonly tokenisationService:TokenisationService ){}
+    constructor( 
+        private readonly tokenisationService:TokenisationService
+     ){}
 
     @UseGuards(JwtAuthGuard,RolesGuard)
     @Roles(Role.TERMINAL)
     @Get("orchestra") 
     
     synchCalls(
-        @Request() req
+        // @Request() req
     ){
-        console.log("merchant validated.")
+    //     console.log("merchant validated.")
 
-        const {pan} = req.card
+    //     const {pan} = req.card
+    const pan:number = 1234098202920117
         this.tokenisationService.tokenisePan(pan)
         console.log("pan tokenised.")
-    }
+     }
     
     }
    
