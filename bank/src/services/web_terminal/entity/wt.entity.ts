@@ -31,6 +31,6 @@ export class Terminal{
     role:Role
 
     @Column()
-    date:Date
+    timestamp:Date
 
 }

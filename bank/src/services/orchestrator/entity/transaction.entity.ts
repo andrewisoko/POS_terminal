@@ -32,7 +32,7 @@ export class Transaction {
     // status: TRANSACTION_STATUS;
 
     // @Column()
-    // date:Date
+    // timestamp:Date
 
 
     // /*Many to one */
@@ -41,6 +41,9 @@ export class Transaction {
 
     @Column()
     panToken:string;
+
+    // @Column()
+    // merchant:string;
 
     // @ManyToOne(()=>Party,party =>party.fullName)
     // customer:Party[]

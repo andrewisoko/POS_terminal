@@ -10,6 +10,7 @@ import { WTModule } from 'src/services/web_terminal/wt.module';
 import { TransactionModule } from 'src/services/orchestrator/transaction.module';
 import { Party } from 'src/services/party_service/entity/party.entity';
 import { Transaction } from 'src/services/orchestrator/entity/transaction.entity';
+import { RuleEngineModule } from 'src/services/rule_engine_service/rule.engine.module';
 
 
 
@@ -25,6 +26,7 @@ import { Transaction } from 'src/services/orchestrator/entity/transaction.entity
     imports:[
       ConfigModule,
       TransactionModule,
+      RuleEngineModule,
       AuthModule,
       WTModule
     ],
