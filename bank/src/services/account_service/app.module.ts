@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from '../../api_gateway/config/app.controller';
+import { AppService } from '../../api_gateway/config/app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {ConfigModule} from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
-import { AuthModule } from '../../services/auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
 import { Terminal } from 'src/services/web_terminal/entity/wt.entity';
 import { WTModule } from 'src/services/web_terminal/wt.module';
 import { TransactionModule } from 'src/services/orchestrator/transaction.module';
 import { Party } from 'src/services/party_service/entity/party.entity';
 import { Transaction } from 'src/services/orchestrator/entity/transaction.entity';
 import { RuleEngineModule } from 'src/services/rule_engine_service/rule.engine.module';
+import { AccountModule } from 'src/services/account_service/account.module';
+import { Account } from 'src/services/account_service/entity/account.entity';
 
 
 
@@ -28,6 +30,7 @@ import { RuleEngineModule } from 'src/services/rule_engine_service/rule.engine.m
       TransactionModule,
       RuleEngineModule,
       AuthModule,
+      AccountModule,
       WTModule
     ],
     inject:[ConfigService],
@@ -41,7 +44,7 @@ import { RuleEngineModule } from 'src/services/rule_engine_service/rule.engine.m
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         synchronize:true,
-        entities:[Terminal,Party,Transaction]
+        entities:[Terminal,Party,Transaction,Account]
       }
     }
   })

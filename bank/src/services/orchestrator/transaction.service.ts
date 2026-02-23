@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Transaction } from "./entity/transaction.entity";
 import { Repository } from "typeorm";
+import { Party } from "../party_service/entity/party.entity";
+import { Terminal } from "../web_terminal/entity/wt.entity";
 
 
 export interface dataPayload {
@@ -16,29 +18,29 @@ export interface dataPayload {
 
 }
 
+export interface cardData {
+    pan:string,
+    expiry:Date,
+    amount:number,
+    currency:string,
+    merchant:string,
+    timestamp:Date,
+    customerId:string,
+    accountId:string, 
+    terminalId:string,
+}
+
 @Injectable()
 export class TransactionService{
     constructor(
         @InjectRepository(Transaction) private readonly transactionRepository:Repository<Transaction>
     ){}
 
-    async tokenCall(){
-        const count: number = 0
+    async orchestrate(cardData){
+
     }
 
-    async panToken(transaction:Transaction){ /*temporary */
-        return  transaction.panToken
-    }
+   
 
-    async validateDataPayload(
-        transaction:Transaction,
-    ){
-        return{
-            token: transaction.panToken,
-            // anount: transaction.amount,
-            // currency: transaction.currency,
-            // merchant:transaction.merchant
-        }
-    }
 
 }

@@ -1,4 +1,4 @@
-import { Entity,PrimaryGeneratedColumn,Column } from "typeorm";
+import { Entity,PrimaryColumn,Column,BeforeInsert } from "typeorm";
 
 
 export enum TIERS {
@@ -21,8 +21,14 @@ export enum STATUS{
 @Entity("Party")
 export class Party {
 
-    @PrimaryGeneratedColumn()
-    id:number
+     @PrimaryColumn('varchar', { length: 20 })
+         id: string;
+    
+    @BeforeInsert()
+        setId() {
+            const random = Math.floor(1000 + Math.random() * 9000); 
+            this.id = `PARTY_${random}`;
+        }
 
     @Column()
     fullName:string
