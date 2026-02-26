@@ -19,19 +19,21 @@ export class RuleEngineController{
     @Post('checks')
     async ruleEngineChecks(
         @Request() req,
-        @Body() dataDto: {
-            amount:number,
-            currency:string,
-            merchant:string }
+       
     ){
-     const {panToken} = req.customer
+     const {
+        panToken,
+        amount,
+        currency,
+        merchant
+    } = req.customer
 
     return await this.ruleEngineService.
     enginechecks({
         token:panToken,
-        amount:dataDto.amount,
-        currency:dataDto.currency,
-        merchant:dataDto.merchant
+        amount:amount,
+        currency:currency,
+        merchant:merchant
     })   
 } 
 }

@@ -1,4 +1,4 @@
-import { Controller,Get, UseGuards } from "@nestjs/common";
+import { Controller,Post, UseGuards, Body } from "@nestjs/common";
 import { JwtAuthGuard } from "src/services/auth/authGuard";
 import { RolesGuard } from "src/services/auth/roles/roles.guard";
 import { TokenisationService } from "./tokenisation.service";
@@ -13,10 +13,10 @@ export class TokenisationController{
 
     @UseGuards(JwtAuthGuard,RolesGuard)
     @Roles(Role.TERMINAL)
-    @Get('pan-tokenisation')
+    @Post('pan-tokenisation')
     tokenisePan(
+        @Body() panDto:{panEncrypt:string}
     ){
-        const panForTest = 1234098756781688 
-        return this.tokenisationService.tokenisePan(panForTest)
+        return this.tokenisationService.tokenisePan(panDto.panEncrypt)
     }
 }

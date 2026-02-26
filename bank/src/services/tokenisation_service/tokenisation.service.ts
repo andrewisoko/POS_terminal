@@ -14,7 +14,7 @@ export class TokenisationService {
     ){}
 
     /* PCI compliance to add  */
-    async tokenisePan(encryptedPan:string){
+    tokenisePan(encryptedPan:string){
         
         const crypto = require('crypto');
         try {
@@ -22,13 +22,9 @@ export class TokenisationService {
                 // console.log(pan)
             const rawPan = this.decryption.decrypt(encryptedPan)
             const token  = crypto.createHash('sha256').update(rawPan.toString()).digest('hex');
-            const findExistingtoken = await this.transactionRepository.findOne({ where:{panEncrypt:token }}) 
-    
-            if (findExistingtoken) {
-             throw new ConflictException('pan already generated');
-            }   
-            await this.transactionRepository.save({ panEncrypt:token })
-            return "Pan token saved";
+            
+            console.log("Pan tokenised.")
+            return token;
             
         } catch (error) {
             console.log(`error ${error}`)

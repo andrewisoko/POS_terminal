@@ -6,6 +6,7 @@ import { Party } from "../party_service/entity/party.entity";
 import { Terminal } from "../web_terminal/entity/wt.entity";
 import { Account } from "../account_service/entity/account.entity";
 import { EncryptSecurity } from "./encryption/encrypt.security";
+import { HttpService } from "@nestjs/axios";
 
 
 export interface dataPayload {
@@ -39,7 +40,9 @@ export class TransactionService{
         @InjectRepository(Party) private readonly partyRepository:Repository<Party>,
         @InjectRepository(Account) private readonly accountRepository:Repository<Account>,
         @InjectRepository(Terminal) private readonly terminalRepository:Repository<Terminal>,
+
         private readonly encryption:EncryptSecurity,
+        private readonly httpService: HttpService,
 
     ){}
 
@@ -89,11 +92,10 @@ export class TransactionService{
             console.log(`error: ${error}`)
          }   
 
-
         return `transaction created`
     }
 
-    async orchestrate({
+    async orchestrate({ /* transaction service via httpService orchrstrates its operations */
         pan,
         expiry,
         amount,
@@ -105,19 +107,62 @@ export class TransactionService{
         terminal,
     }:fullRequestData
     ){
-        
-        await this.createTransaction({
-            pan,
-            expiry,
-            amount,
-            currency,
-            merchant,
-            timestamp,
-            customer,
-            account,
-            terminal,
-        })
 
+        try {
+            
+            /* data from gateway-api to transaction service first hop */
+    
+            await this.createTransaction({
+                pan,
+                expiry,
+                amount,
+                currency,
+                merchant,
+                timestamp,
+                customer,
+                account,
+                terminal,
+            })
+
+            const panEncrypt = await this.transactionRepository.findOne({where:{panEncrypt:pan}})
+            if(! panEncrypt ) throw new NotFoundException("pan not found");
+
+            let panToken;
+
+            /* transansaction service calls merchant service (Auth) */
+
+            const validateTerminal = () => this.httpService.get('http://localhost:3002/api.gateway/auth/validation-terminal/')
+            validateTerminal()
+            console.log("Web terminal validated ✅");
+
+            /* transansaction service calls tokenise token */
+
+            const tokenisePan = () => {
+                return this.httpService.post('http://localhost:3002/api.gateway/token/pan-tokenisation/',{panEncrypt}) /*test if jwt guard is needed */
+            }
+            panToken = tokenisePan()
+            console.log(panToken)
+            console.log("Pan tokenised 🔐");
+
+            /* and so on...*/
+
+            const ruleEngine = () => {
+                return this.httpService.post(
+                    'http://localhost:3002/api.gateway/rule-engine/checks/',
+                    {
+                        token:panToken,
+                        amount:amount,
+                        currency:currency,
+                        merchant:merchant
+                    }
+                )
+            }
+            ruleEngine()
+
+
+        } catch (error) {
+            console.log(`Error: ${error}`)
+        }
 
 
     }

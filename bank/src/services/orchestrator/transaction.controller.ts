@@ -1,9 +1,8 @@
-import { Controller,Get, UseGuards} from "@nestjs/common";
+import { Controller,Get, UseGuards,Request} from "@nestjs/common";
 import { JwtAuthGuard } from "src/services/auth/authGuard";
 import { Role } from "../web_terminal/entity/wt.entity";
 import { Roles } from "../auth/roles/roles.decorators";
 import { RolesGuard } from "src/services/auth/roles/roles.guard";
-import { HttpService } from "@nestjs/axios";
 import { TransactionService } from "./transaction.service";
 
 
@@ -12,29 +11,39 @@ import { TransactionService } from "./transaction.service";
 @Controller("transaction")
 export class TransactionController {
     constructor(
-        private readonly httpService: HttpService,
         private readonly transactionService: TransactionService
     ) {}
 
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.TERMINAL)
     @Get("orchestra")
-    orchestrate() {
-        try {
-            const validateTerminal = () => this.httpService.get('http://localhost:3002/api.gateway/auth/validation-terminal/')
-            validateTerminal()
-            console.log("Web terminal validated ✅");
+    orchestrate(
+        @Request() req
+    ) {
+        const { 
+            pan,
+            expiry, 
+            amount, 
+            currency, 
+            merchant, 
+            timestamp, 
+            customer, 
+            account, 
+            terminal
+        } = req.customer
 
-            const tokenisePan = () => this.httpService.get('http://localhost:3002/api.gateway/token/pan-tokenisation/') /* change it to post */
-            tokenisePan()
-            console.log("Pan tokenised 🔐");
-
-            // const ruleEngine = () => this.httpService.post('http://localhost:3002/api.gateway/rule-engine/checks',)
-            
-        } catch (error) {
-            console.log(`error ${error}`)
+        return this.transactionService.orchestrate({
+            pan:pan,
+            expiry:expiry,
+            amount:amount,
+            currency:currency, 
+            merchant:merchant, 
+            timestamp:timestamp, 
+            customer:customer, 
+            account:account, 
+            terminal:terminal
         }
-        this.orchestrate()
+        )
     }
 }
    
