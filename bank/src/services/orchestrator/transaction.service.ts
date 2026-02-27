@@ -14,9 +14,9 @@ export interface dataPayload {
     amount:number;
     currency: string;
     merchant: string;
+    accountStatus:string;
     timestamp?: Date;
-    customerID?: number;
-    accountType?: string /*enum* only one account type for purpose of the project */ 
+    customerID: string;
     // location?
 
 }
@@ -127,6 +127,8 @@ export class TransactionService{
             const panEncrypt = await this.transactionRepository.findOne({where:{panEncrypt:pan}})
             if(! panEncrypt ) throw new NotFoundException("pan not found");
 
+            const CustomerID = await this.partyRepository.findOne({where:{ id:customerID }});
+            if (! CustomerID ) throw new NotFoundException("customerID not found");
             let panToken;
 
             /* transansaction service calls merchant service (Auth) */
@@ -153,7 +155,9 @@ export class TransactionService{
                         token:panToken,
                         amount:amount,
                         currency:currency,
-                        merchant:merchant
+                        merchant:merchant,
+                        accountStatus:,
+                        customerID:,
                     }
                 )
             }

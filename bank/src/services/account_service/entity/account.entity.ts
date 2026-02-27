@@ -1,4 +1,5 @@
-import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn } from "typeorm";
+import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn, ManyToOne } from "typeorm";
+import { Party } from "src/services/party_service/entity/party.entity";
 
 
 @Entity("Account")
@@ -30,6 +31,9 @@ export class Account{
 
     @UpdateDateColumn({ name: 'updated_at' })
         updatedAt: Date;
+
+     @ManyToOne(()=>Party,party =>party.fullName)
+        customer:Party;
     }
 
 
