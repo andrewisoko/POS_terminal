@@ -7,31 +7,19 @@ import { Terminal } from "../web_terminal/entity/wt.entity";
 import { Account } from "../account_service/entity/account.entity";
 import { EncryptSecurity } from "./encryption/encrypt.security";
 import { HttpService } from "@nestjs/axios";
+import { FullRequestDto } from "src/api_gateway/config/dto/request.data.dto";
 
 
-export interface dataPayload {
+export interface EngineCheckRequest {
     token: string;
-    accountStatus:"ACTIVE"|"BLOCKED"|"CLOSED";
+    amount: number;
+    currency: string;
+    merchant: string;
+    accountStatus: "ACTIVE" | "BLOCKED" | "CLOSED";
     customerID: string;
-    // location?
-
 }
 
-export interface fullRequestData {
-    pan:string,
-    amount:number,
-    currency:string,
-    expiry:string,
-    merchant:string,
-    timestamp:Date,
-    customer:string,
-    account:string, 
-    terminal:string,
-    token?: dataPayload
-    accountStatus?:dataPayload
-    customerID?: dataPayload
-    // location?
-}
+
 
 @Injectable()
 export class TransactionService{
@@ -57,7 +45,7 @@ export class TransactionService{
         account,
         terminal,
 
-    }:fullRequestData
+    }:FullRequestDto
 
     ){
         const customerId = await this.partyRepository.findOne({where:{id:customer}})
@@ -95,8 +83,8 @@ export class TransactionService{
         return `transaction created`
     }
 
-    async orchestrate( /* transaction service via httpService orchrstrates its operations */
-    fullRequestData:fullRequestData,
+    async orchestrate( /* transaction service via httpService orchestrates its operations */
+    fullRequestData:FullRequestDto,
     ){
 
         try {
@@ -118,7 +106,7 @@ export class TransactionService{
             const panEncrypt = await this.transactionRepository.findOne({ where:{ panEncrypt:fullRequestData.pan } })
             if(! panEncrypt ) throw new NotFoundException("pan not found");
             
-
+            
             const CustomerId = await this.partyRepository.findOne({ where:{ id: fullRequestData.customerID } });
             if (! CustomerId ) throw new NotFoundException("customerID not found");
 
@@ -151,8 +139,8 @@ export class TransactionService{
                         amount: fullRequestData.amount,
                         currency: fullRequestData.currency,
                         merchant: fullRequestData.merchant,
-                        accountStatus: dataPayload.accountStatus,
-                        customerID: dataPayload.customerID,
+                        accountStatus: fullRequestData.accountStatus,
+                        customerID: fullRequestData.customerID,
                     }
                 )
             }

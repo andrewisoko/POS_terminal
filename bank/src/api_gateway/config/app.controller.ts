@@ -12,12 +12,18 @@
 // }
 
 // app.controller.ts
-import { Controller, Get, Redirect } from '@nestjs/common';
+import { Body, Controller,Post} from '@nestjs/common';
+import { FullRequestDto } from './dto/request.data.dto';
 
 @Controller()
 export class AppController {
-  @Get() // this is "/"
-  @Redirect('http://localhost:3002/api.gateway/transaction/orchestra/', 302)
-  redirectToTerminalValidation() {
+
+  @Post()
+  RedirectTransactionController(
+    @Body() dataDto:FullRequestDto
+  ){
+    return this.RedirectTransactionController(dataDto)
   }
+
 }
+

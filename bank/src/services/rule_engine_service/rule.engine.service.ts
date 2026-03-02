@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { dataPayload, fullRequestData } from "../orchestrator/transaction.service";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EngineCheckRequest } from "../orchestrator/transaction.service";
 import { Repository } from "typeorm";
 import { Transaction } from "../orchestrator/entity/transaction.entity";
 import { Terminal } from "../web_terminal/entity/wt.entity";
@@ -14,24 +14,23 @@ export class RuleEngineService{
     @InjectRepository(Party) private readonly partyRepository:Repository<Party>;
 
     async enginechecks(
-        dataPayload:dataPayload,
-        fullRequestData:fullRequestData,
+        engineCheckRequest: EngineCheckRequest
         ){
         
         try {
             let approved:boolean= false
 
-            const checkCustomerID = await this.partyRepository.findOne({ where:{id:dataPayload.customerID }});
+            const checkCustomerID = await this.partyRepository.findOne({ where:{ id:engineCheckRequest.customerID }});
             if (! checkCustomerID ) throw new NotFoundException("customerID not found");
 
-            const checkMerchant = await this.terminalRepository.findOne({ where:{subject: fullRequestData.merchant }});
+            const checkMerchant = await this.terminalRepository.findOne({ where:{subject: engineCheckRequest.merchant }});
             console.log(`merchant ${checkMerchant}`);
 
             if (! checkMerchant ) throw new NotFoundException("merchant not found");
-            if ( dataPayload.accountStatus !== "ACTIVE" ) throw new UnauthorizedException("account not active")
+            if ( engineCheckRequest.accountStatus !== "ACTIVE" ) throw new UnauthorizedException("account not active")
             
-            if(fullRequestData.amount >= 150000) throw new UnauthorizedException("Invalid amount");  /*balance check to be added.*/
-            if (fullRequestData.currency !== "GBP") throw new UnauthorizedException("Invalid currency");
+            if( engineCheckRequest.amount >= 150000 ) throw new UnauthorizedException("Invalid amount");  /*balance check to be added.*/
+            if ( engineCheckRequest.currency !== "GBP" ) throw new UnauthorizedException("Invalid currency");
 
             approved = true
             const action = approved ? "approve": "declined";

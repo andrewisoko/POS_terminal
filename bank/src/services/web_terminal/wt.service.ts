@@ -40,20 +40,20 @@ export class WebTerminal{
     async CreateWT(){
 
         const serialNumber = this.generateSerialNum();
+        // console.log(serialNumber)
         const signature = this.generateSignature();
 
         const certTerminal = {
-            serialNumber:Number(serialNumber),
+            serialNumber: serialNumber,
             signature: signature,
-            issuer:'Tututorial Bank',
+            issuer:'Tutorial Bank',
             subject:'Merchant Tutorial',
             role: Role.TERMINAL
         };
         const terminal_token = this.jwtService.sign(certTerminal);
 
-        await this.TerminalRepository.create(certTerminal)
-        await this.TerminalRepository.save({timestamp:new Date(Date.now())})
-        await this.TerminalRepository.save(certTerminal)
+        const terminalEntity = await this.TerminalRepository.create(certTerminal);
+        await this.TerminalRepository.save(terminalEntity);
 
         return {terminal_token:terminal_token}
 

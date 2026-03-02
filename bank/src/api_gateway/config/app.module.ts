@@ -14,25 +14,27 @@ import { RuleEngineModule } from 'src/services/rule_engine_service/rule.engine.m
 import { AccountModule } from 'src/services/account_service/account.module';
 import { Account } from 'src/services/account_service/entity/account.entity';
 import { TokenisationModule } from 'src/services/tokenisation_service/tokenisation.module';
+import { HttpModule } from '@nestjs/axios';
 
 
 
 @Module({
   imports: [
+    HttpModule,
     ConfigModule.forRoot({
 
       isGlobal:true,
       envFilePath:__dirname + '/../../../.env'
-    }
+    },
   ),
   TypeOrmModule.forRootAsync({
     imports:[
-      ConfigModule,
       TransactionModule,
       RuleEngineModule,
       TokenisationModule,
       AuthModule,
       AccountModule,
+      HttpModule,
       WTModule
     ],
     inject:[ConfigService],

@@ -11,7 +11,7 @@ export class Terminal{
    @PrimaryGeneratedColumn('uuid')
         id: string;
 
-    @Column({ type:'numeric', precision:8 ,scale:0 })
+    @Column({ type:'integer',  default: 87671023 })
     serialNumber:number;
 
     @Column( 'varchar', { length:21, default:"1.2.840.113549.1.1.11"} )

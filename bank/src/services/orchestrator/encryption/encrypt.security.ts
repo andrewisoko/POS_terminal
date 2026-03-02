@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EncryptSecurity{
@@ -7,16 +8,14 @@ export class EncryptSecurity{
   private readonly algorithm = 'aes-256-gcm';
   private readonly key: Buffer;
 
-    constructor() {
-    const key = process.env.ENCRYPTION_KEY;
+    constructor( private configService: ConfigService ) {
+    const key = this.configService.get<string>('ENCRYPTION_KEY');
 
     if (!key) {
-      throw new Error('ENCRYPTION_KEY is not defined');
+      throw new Error(`ENCRYPTION_KEY is not defined ${this.configService.get<string>('ENCRYPTION_KEY')}`);
     }
   }
 
-
-  
   encrypt(text: string){
 
     const iv = crypto.randomBytes(12);

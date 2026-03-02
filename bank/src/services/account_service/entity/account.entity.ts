@@ -1,4 +1,4 @@
-import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn, ManyToOne } from "typeorm";
+import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { Party } from "src/services/party_service/entity/party.entity";
 
 
@@ -32,9 +32,10 @@ export class Account{
     @UpdateDateColumn({ name: 'updated_at' })
         updatedAt: Date;
 
-     @ManyToOne(()=>Party,party =>party.fullName)
-        customer:Party;
-    }
+    @ManyToOne(() => Party)
+        @JoinColumn({ name: 'customer_id' })
+        customer: Party;
+        }
 
 
 

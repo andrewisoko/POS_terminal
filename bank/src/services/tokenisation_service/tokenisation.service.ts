@@ -9,7 +9,7 @@ import { EncryptSecurity } from "../orchestrator/encryption/encrypt.security";
 export class TokenisationService {
 
     constructor(
-        @InjectRepository(Transaction) private readonly transactionRepository: Repository<Transaction>,
+        // @InjectRepository(Transaction) private readonly transactionRepository: Repository<Transaction>,
         private readonly decryption:EncryptSecurity
     ){}
 
