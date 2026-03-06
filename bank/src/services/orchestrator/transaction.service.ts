@@ -21,6 +21,13 @@ export interface EngineCheckRequest {
     customerID: string;
 }
 
+export interface AcquirerRequest {
+    amount:number,
+    panEncrypt:string,
+    terminalid: string,
+    merchant: string,
+    currency:string,
+}
 
 
 @Injectable()
