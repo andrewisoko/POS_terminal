@@ -1,7 +1,8 @@
 import { Terminal } from "src/services/web_terminal/entity/wt.entity";
 import { Party } from "src/services/party_service/entity/party.entity";
-import { Entity,PrimaryColumn,Column, ManyToOne,CreateDateColumn } from "typeorm";
+import { Entity,PrimaryColumn,Column, ManyToOne,OneToMany,CreateDateColumn, OneToOne } from "typeorm";
 import { Account } from "src/services/account_service/entity/account.entity";
+import { RuleEngine } from "src/services/rule_engine_service/entity/rule.engine.entity";
 
 export enum TRANSACTION_STATUS {
     PENDING = "pending",
@@ -50,6 +51,9 @@ export class Transaction {
  
     @Column('varchar', {length: 25 ,default:"Merchant Tutorial"})
     merchant:string;
+
+    @OneToOne(()=>RuleEngine,ruleEngine =>ruleEngine.transaction)
+    ruleEngine:RuleEngine
 
     @ManyToOne(()=>Account,account =>account.transactions)
     account:Account; 

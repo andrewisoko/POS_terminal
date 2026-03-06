@@ -9,6 +9,7 @@ import { EncryptSecurity } from "./encryption/encrypt.security";
 import { HttpService } from "@nestjs/axios";
 import { FullRequestDto } from "src/api_gateway/config/dto/request.data.dto";
 import { firstValueFrom } from 'rxjs';
+import { RuleEngine } from "../rule_engine_service/entity/rule.engine.entity";
 
 
 export interface EngineCheckRequest {
@@ -29,6 +30,8 @@ export class TransactionService{
         @InjectRepository(Party) private readonly partyRepository:Repository<Party>,
         @InjectRepository(Account) private readonly accountRepository:Repository<Account>,
         @InjectRepository(Terminal) private readonly terminalRepository:Repository<Terminal>,
+        @InjectRepository(RuleEngine) private readonly ruleEngineRepository:Repository<RuleEngine>,
+
 
         private readonly encryption:EncryptSecurity,
         private readonly httpService: HttpService,
@@ -82,6 +85,18 @@ export class TransactionService{
          }   
     };
 
+    async createRuleEngineTable(
+        decision,
+        transaction,
+    ){
+        const ruleEngine = this.ruleEngineRepository.create({
+            decision:decision,
+            transaction:transaction
+        })
+
+        return this.ruleEngineRepository.save(ruleEngine)
+    }
+    
     async orchestrate( /* transaction service via httpService orchestrates its operations */
     fullRequestData:FullRequestDto,
     ){
@@ -108,6 +123,7 @@ export class TransactionService{
 
             const panEncryptParse = JSON.parse(transaction.panEncrypt);
             const terminalToken = transaction.terminal.acc_token
+         
             let panToken;
 
 
@@ -165,8 +181,9 @@ export class TransactionService{
                 )
             ); 
             console.log("rule engine:", ruleEngine.data);
-        
-       
+            
+            const ruleEngineTable = await this.createRuleEngineTable(ruleEngine,transaction);
+            transaction.ruleEngine = ruleEngineTable
 
 
         } catch (error) {

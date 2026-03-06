@@ -7,9 +7,10 @@ import { Terminal } from "../web_terminal/entity/wt.entity";
 import { Party } from "../party_service/entity/party.entity";
 
 
+
 @Injectable()
 export class RuleEngineService{
-    @InjectRepository(Transaction) private readonly transactionRepository:Repository<Transaction>;
+    // @InjectRepository(Transaction) private readonly transactionRepository:Repository<Transaction>;
     @InjectRepository(Terminal) private readonly terminalRepository:Repository<Terminal>;
     @InjectRepository(Party) private readonly partyRepository:Repository<Party>;
 
@@ -33,7 +34,8 @@ export class RuleEngineService{
             if ( engineCheckRequest.currency !== "GBP" ) throw new UnauthorizedException("Invalid currency");
 
             approved = true
-            const action = approved ? "approve": "declined";
+            const action = approved ? "approved": "declined";
+
 
             return {"action": action};
              
