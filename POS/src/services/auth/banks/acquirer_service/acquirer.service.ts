@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AcquirerRequest } from 'src/services/orchestrator/transaction.service';
 import { EncryptSecurity } from 'src/services/orchestrator/encryption/encrypt.security';
-import { Coversion } from '../iso_val_conversions/conversions';
+import { Conversion } from '../iso_val_conversions/conversions';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Acquirer } from '../entity/acquirer.entity';
 import { Repository } from 'typeorm';
@@ -12,7 +12,7 @@ export class AcquirerService {
     constructor(
         @InjectRepository(Acquirer) private readonly acquirerRepository:Repository<Acquirer>,
         private readonly encryptSecurity: EncryptSecurity,
-        private readonly convertInIsoVal: Coversion
+        private readonly convertInIsoVal: Conversion
     ){}
 
 

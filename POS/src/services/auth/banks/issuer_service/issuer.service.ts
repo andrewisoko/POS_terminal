@@ -1,23 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { Coversion } from '../iso_val_conversions/conversions';
+import { Conversion } from '../iso_val_conversions/conversions';
 import { ConfigService } from '@nestjs/config';
+import { PartyBankAccount } from '../partyBankAccount';
 
 
 
-export const BankParty1 = {
-
-  BALANCE: 2000,
-  PAN: process.env.ISSUER_PARTY1_PAN,
-  EXPIRY: process.env.EXPIRY_DATE, 
-
-} as const;
 
 
 @Injectable()
 export class IssuerService {
 
     constructor(
-        private readonly convertToVal: Coversion
+        private readonly convertToVal: Conversion,
+        private readonly bankParty: PartyBankAccount
     ){}
 
     
@@ -35,6 +30,7 @@ export class IssuerService {
         }
 
     IssuerBankService(){
+
         const net = require('net');
 
         const server = net.createServer((socket) => {
@@ -46,46 +42,28 @@ export class IssuerService {
             const isoMsg = this.parseIsoMessage(data);
 
             /*Authorisation process */
-
+            const bank = this.bankParty.getBankParty();
             let responseCode = "00";
             
             const amount = this.convertToVal.reverseIsoAmount(isoMsg[4])
             const expiryDate = this.convertToVal.reverseExpiry(isoMsg[14])
             const pan = isoMsg[2]
-        
+            
+             console.log(` isoAmount: ${amount}`)
+             console.log(` expiryDate: ${expiryDate}`)
+             console.log(` pan: ${pan}`)
+             console.log(` balance: ${bank.BALANCE}`)
+             console.log(` bank Exp: ${bank.EXPIRY}`)
+             console.log(` bank pan: ${bank.PAN}`)
 
-            if(amount >= BankParty1.BALANCE || expiryDate !== BankParty1.EXPIRY || pan !== BankParty1.PAN){
+
+            if(amount >= bank.BALANCE || expiryDate !== bank.EXPIRY || pan !== bank.PAN){
                 responseCode = "51"
+                console.log(`response: ${responseCode}`)
             }
-            return responseCode;
+            // return responseCode;
+            console.log(`response: ${responseCode}`)
            
-
-
-
-        //  const isoMsg = parseIsoMessage(data);
-
-        //   const amount = isoMsg[4];
-        //   const pan = isoMsg[2];
-
-        //   let responseCode = "00";
-
-        //   if (amount > 100000) {
-        //     responseCode = "51";
-        //   }
-
-        //   const response = buildIsoResponse(isoMsg, responseCode);
-
-        //   socket.write(response);
-
-            // console.log("MTI:", iso[0]);
-            // console.log("PAN:", iso[2]);
-            // console.log("Amount:", iso[4]);
-            // console.log("STAN:", iso [11]);
-            // console.log("Terminal:", iso [41]);
-            // console.log("Merchant:", iso [43]);
-            // console.log("Currency:", iso [49]);
-             
-
              });
 
         });

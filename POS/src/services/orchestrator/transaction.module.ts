@@ -12,7 +12,9 @@ import { Account } from "../account_service/entity/account.entity";
 import { Terminal } from "../web_terminal/entity/wt.entity";
 import { RuleEngine } from "../rule_engine_service/entity/rule.engine.entity";
 import { IssuerService } from "../auth/banks/issuer_service/issuer.service";
-import { Coversion } from "../auth/banks/iso_val_conversions/conversions";
+import { Conversion } from "../auth/banks/iso_val_conversions/conversions";
+import { PartyBankAccount } from "../auth/banks/partyBankAccount";
+import { ConfigService } from "@nestjs/config";
 
 
 @Module({
@@ -35,7 +37,9 @@ import { Coversion } from "../auth/banks/iso_val_conversions/conversions";
         TransactionService,
         IssuerService,
         EncryptSecurity,
-        Coversion
+        Conversion,
+        PartyBankAccount,
+        ConfigService
         
     ],
 })

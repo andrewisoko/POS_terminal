@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
-export class Coversion {
+export class Conversion {
 
     toIsoAmount(amount, exponent = 2) { /*conversion in minor currency units */
         const minorUnits = Math.round(amount * Math.pow(10, exponent));

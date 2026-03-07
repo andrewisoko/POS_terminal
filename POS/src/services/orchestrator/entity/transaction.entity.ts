@@ -3,7 +3,7 @@ import { Party } from "src/services/party_service/entity/party.entity";
 import { Entity,PrimaryColumn,Column, ManyToOne,OneToMany,CreateDateColumn, OneToOne } from "typeorm";
 import { Account } from "src/services/account_service/entity/account.entity";
 import { RuleEngine } from "src/services/rule_engine_service/entity/rule.engine.entity";
-import { Acquirer } from "src/services/auth/banks/entity/acquirer.entity";
+
 
 export enum TRANSACTION_STATUS {
     PENDING = "pending",
@@ -26,12 +26,7 @@ export class Transaction {
     @Column('varchar', { length:3, default:"GBP" })
     currency:string;
 
-    @Column({
-         type: 'numeric',
-        precision: 12,
-        nullable: false,
-        default: 0 
-    })
+    @Column('decimal', { precision: 6, scale: 2, default: 100 })
     amount:number
 
       @Column({

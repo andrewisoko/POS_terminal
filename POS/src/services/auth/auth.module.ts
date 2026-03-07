@@ -5,8 +5,10 @@ import { Module } from "@nestjs/common";
 import { MerchantController } from "./merchant_service/merchant.controller";
 import { MechartService } from "./merchant_service/merchant.service";
 import { JwtStrategy } from "./jwt.strategy";
-
+import { Conversion } from "./banks/iso_val_conversions/conversions";
 import { IssuerService } from './banks/issuer_service/issuer.service';
+import { PartyBankAccount } from "./banks/partyBankAccount";
+PartyBankAccount
 
 
 /* initial auth approach will be a simple jwt authorisation. The app initially verifies if web POS terminal contains the token.*/
@@ -26,7 +28,7 @@ import { IssuerService } from './banks/issuer_service/issuer.service';
         }),
     ], 
     controllers:[MerchantController],
-    providers:[MechartService,JwtStrategy, IssuerService]
+    providers:[MechartService,JwtStrategy,Conversion,PartyBankAccount,IssuerService]
 })
 
 export class AuthModule {}
