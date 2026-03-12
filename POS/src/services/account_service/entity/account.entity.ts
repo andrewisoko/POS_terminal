@@ -7,10 +7,13 @@ import { Transaction } from "src/services/orchestrator/entity/transaction.entity
 export class Account{
 
     @PrimaryGeneratedColumn('uuid')
-     id: string;
-
-     @Column({ unique: true })
-        accountNumber: string;
+        id: string;
+ 
+    @Column( 'text',{default: 'fekwjdekdoSISISIS'})
+        panEncrypt:string;
+    
+    @Column('varchar', { length: 20, default: 'Johnson Handsome' })
+        fullName:string;
 
     @Column({ name: 'customer_id' })
         customerId: string;     
@@ -24,8 +27,8 @@ export class Account{
     @Column({ length: 3, default: 'GBP' })
         currency: string;
     
-    @Column( 'varchar',{ length:5, default:"12/28" })
-    expiryDate:string
+    @Column( 'text', {default: '12/33 '})
+        expiryEncrypt:string
 
     @Column({ default: 'ACTIVE' })
         status: 'ACTIVE' | 'BLOCKED' | 'CLOSED';

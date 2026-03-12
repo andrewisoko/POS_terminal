@@ -70,6 +70,7 @@ export class AcquirerService {
                 14: isoExpDate,
                 41: acqData.terminalid,
                 43: acqData.merchant.padEnd(40, " "),
+                45: acqData.fullName,
                 49: "826" /*this is the ISO 4217 numeric currency code ecquivalent of GBP */
             };
             

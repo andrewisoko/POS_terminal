@@ -25,6 +25,7 @@ export class AcquirerController {
             currency:string,
             exiprationDate:string,
             transactionId:string,
+            fullName:string
             stan:number
         }
     ){
@@ -35,6 +36,7 @@ export class AcquirerController {
             merchant: dataDto.merchant,
             currency: dataDto.currency,
             exiprationDate:dataDto.exiprationDate,
+            fullName:dataDto.fullName,
             stan:dataDto.stan
         })
     }

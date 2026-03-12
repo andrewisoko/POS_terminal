@@ -11,7 +11,7 @@ import { FullRequestDto } from "src/api_gateway/config/dto/request.data.dto";
 import { firstValueFrom } from 'rxjs';
 import { RuleEngine } from "../rule_engine_service/entity/rule.engine.entity";
 import { IssuerService } from "../auth/banks/issuer_service/issuer.service";
-import { TokenRecord } from "../tokenisation_service/tokenisation.service";
+
 
 
 export interface EngineCheckRequest {
@@ -30,6 +30,7 @@ export interface AcquirerRequest {
     merchant: string,
     currency:string,
     exiprationDate:string,
+    fullName:string
     stan:number
 }
 
@@ -123,6 +124,9 @@ export class TransactionService{
         try {
             
             /* data from gateway-api to transaction service first hop*/
+
+            // const account =  await this.accountRepository.findOne({ where: {fullName: 'Johnson Handsome' }})
+            // console.log("account ", account)
     
             const transaction = await this.createTransaction({
                 pan:fullRequestData.pan,
@@ -137,8 +141,6 @@ export class TransactionService{
             })
 
             if (! transaction) throw new Error ("failed transaction")
-
-        
 
             const panEncryptParse = JSON.parse(transaction.panEncrypt);
             const terminalToken = transaction.terminal.acc_token
@@ -224,6 +226,7 @@ export class TransactionService{
                         merchant: transaction.merchant,
                         currency: transaction.currency,
                         exiprationDate: transaction.expiryEncrypt,
+                        fullName: transaction.account.fullName,
                         stan:transaction.stan
         
                     },
@@ -237,29 +240,33 @@ export class TransactionService{
             )
             const issuerService = this.issuerService.IssuerBankService();
 
-            /*approval transaction process */
-            console.log("PENDING STATUS", transaction.status);
-            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-            await sleep(3000);
 
-            const fs = require('fs');
-            const path = require('path');
+            /*approval transaction process */
+
+            // console.log(transaction.status)
+
+            // console.log("PENDING STATUS", transaction.status);
+            // const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            // await sleep(3000);
+
+            // const fs = require('fs');
+            // const path = require('path');
             
          
-            const approvedFileJSON = path.join( __dirname,  '..', '..', '..', 'approved.json' );
+            // const approvedFileJSON = path.join( __dirname,  '..', '..', '..', 'approved.json' );
 
-            console.log(approvedFileJSON);
+            // console.log(approvedFileJSON);
                             
          
-            if ( ! fs.existsSync( approvedFileJSON )){
-               transaction.status = TRANSACTION_STATUS.DECLINED; 
-            }
-            else{
-                transaction.status = TRANSACTION_STATUS.APPROVED;
-                console.log("APPROVED", transaction.status)
-                fs.unlinkSync(approvedFileJSON);
-                console.log('File deleted successfully');
-            }
+            // if ( ! fs.existsSync( approvedFileJSON )){
+            //    transaction.status = TRANSACTION_STATUS.DECLINED; 
+            // }
+            // else{
+            //     transaction.status = TRANSACTION_STATUS.APPROVED;
+            //     console.log("APPROVED", transaction.status)
+            //     fs.unlinkSync(approvedFileJSON);
+            //     console.log('File deleted successfully');
+            // }
 
 
 

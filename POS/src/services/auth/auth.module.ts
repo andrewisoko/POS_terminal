@@ -10,6 +10,8 @@ import { IssuerService } from './banks/issuer_service/issuer.service';
 import { PartyBankAccount } from "./banks/partyBankAccount";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Transaction } from "../orchestrator/entity/transaction.entity";
+import { EncryptSecurity } from "../orchestrator/encryption/encrypt.security";
+import { Account } from "../account_service/entity/account.entity";
 
 
 
@@ -17,7 +19,7 @@ import { Transaction } from "../orchestrator/entity/transaction.entity";
 
 @Module({
     imports:[
-        TypeOrmModule.forFeature([Transaction]),
+        TypeOrmModule.forFeature([Transaction,Account]),
         PassportModule,
         JwtModule.registerAsync({
             imports:[ConfigModule],
@@ -31,7 +33,14 @@ import { Transaction } from "../orchestrator/entity/transaction.entity";
         }),
     ], 
     controllers:[MerchantController],
-    providers:[MechartService,JwtStrategy,Conversion,PartyBankAccount,IssuerService]
+    providers:[
+        MechartService,
+        JwtStrategy,
+        Conversion,
+        // PartyBankAccount,
+        IssuerService,
+        EncryptSecurity
+    ]
 })
 
 export class AuthModule {}
