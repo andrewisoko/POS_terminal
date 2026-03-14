@@ -1,14 +1,12 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Conversion } from '../iso_val_conversions/conversions';
-import { ConfigService } from '@nestjs/config';
-import { PartyBankAccount } from '../partyBankAccount';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from 'src/services/orchestrator/entity/transaction.entity';
 import { EncryptSecurity } from 'src/services/orchestrator/encryption/encrypt.security';
 import { Account } from 'src/services/account_service/entity/account.entity';
 import { TRANSACTION_STATUS } from 'src/services/orchestrator/entity/transaction.entity';
-import { threadCpuUsage } from 'process';
+
 
 
 
@@ -44,7 +42,6 @@ export class IssuerService {
         const account = await this.accountRepository.findOne({ where: { fullName: fullNameAcc } });
         if (!account) throw new NotFoundException("account not found");
 
-            console.log("acc pan", typeof(account.panEncrypt))
             const encryptedObj = JSON.parse(account.panEncrypt);
              const rawPan = this.encryption.decrypt(encryptedObj);
              
@@ -112,9 +109,16 @@ export class IssuerService {
             const accPanDecrypted = this.encryption.decrypt(panObj);
             const availableBalance = account.ledger_balance - amount
             
+
             await this.accountRepository.decrement({ id: account.id },'ledger_balance', amount);
             await this.accountRepository.increment({ id: account.id },'available_balance', availableBalance);
             await this.accountRepository.increment({ id: account.id },'hold', amount);
+
+            await this.accountRepository.save(account)
+
+            console.log(`hold: ${account.hold}`);
+            console.log(`ledger_balance: ${account.ledger_balance}`);
+            console.log(`available_balance: ${account.available_balance}`);
 
                 
             if(
@@ -134,6 +138,7 @@ export class IssuerService {
                 await this.accountRepository.save(account)
                 await this.transactionRepository.save(transaction)
                 
+                
                 console.log({
                     "Authorisation_code": "9384FDC",
                     "Response_code": responseCode,
@@ -151,6 +156,9 @@ export class IssuerService {
                 console.log(`response: ${responseCode}`);
             }
             
+            console.log(`final hold: ${account.hold}`);
+            console.log(`final ledger_balance: ${account.ledger_balance}`);
+            console.log(`final available_balance: ${account.available_balance}`);
         });
         
         

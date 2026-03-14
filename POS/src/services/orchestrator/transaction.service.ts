@@ -239,43 +239,13 @@ export class TransactionService{
 
                 )
             )
-            console.log("trans status before", transaction.status);
-            const issuerService = this.issuerService.IssuerBankService();
-
             const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-            await sleep(2000);
-
-            console.log("trans status after", transaction.status);
-
-            /*approval transaction process */
-
-            // console.log(transaction.status)
-
-            // console.log("PENDING STATUS", transaction.status);
-            // const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-            // await sleep(3000);
-
-            // const fs = require('fs');
-            // const path = require('path');
             
-         
-            // const approvedFileJSON = path.join( __dirname,  '..', '..', '..', 'approved.json' );
-
-            // console.log(approvedFileJSON);
-                            
-         
-            // if ( ! fs.existsSync( approvedFileJSON )){
-            //    transaction.status = TRANSACTION_STATUS.DECLINED; 
-            // }
-            // else{
-            //     transaction.status = TRANSACTION_STATUS.APPROVED;
-            //     console.log("APPROVED", transaction.status)
-            //     fs.unlinkSync(approvedFileJSON);
-            //     console.log('File deleted successfully');
-            // }
+            const issuerService = this.issuerService.IssuerBankService();
+            await sleep(2000);  /*waits for response */
 
 
-
+          
 
 
 
