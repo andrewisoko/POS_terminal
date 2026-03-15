@@ -74,6 +74,51 @@ export class IssuerService {
         return transaction
     };
 
+    async placeHold(accountId: string, amount: number){
+
+            await this.accountRepository.decrement(
+                { id: accountId },
+                "available_balance",
+                amount
+            );
+            await this.accountRepository.increment(
+                { id: accountId },
+                "hold",
+                amount
+            );
+        };
+
+    async releaseHold(accountId: string, amount: number){
+
+            await this.accountRepository.increment(
+                { id: accountId },
+                "available_balance",
+                amount
+            );
+
+            await this.accountRepository.decrement(
+                { id: accountId },
+                "hold",
+                amount
+            );
+            console.log("Hold released",amount)
+        };
+    
+    async failTransaction(transaction: Transaction, responseCode: string) {
+
+        transaction.status = TRANSACTION_STATUS.DECLINED;
+    
+        await this.transactionRepository.save(transaction);
+
+        console.log(
+             {
+            responseCode: responseCode,
+            authCode: null,
+            message: "Transaction declined"
+        }
+    );
+}
+
     IssuerBankService(){
 
     
@@ -89,77 +134,76 @@ export class IssuerService {
             let responseCode = "51";
             const isoMsg = this.parseIsoMessage(data);
             
-            /*Authorisation process */
             
             const pan = isoMsg[2];
             const fullName = isoMsg[45];
             const stan = Number( isoMsg[11] );
             
-
+            
             const amount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
             const expiryDate = this.convertToVal.reverseExpiry(isoMsg[14]);
             
             const account =  await this.findAccount(pan,fullName);
             const transaction = await this.findTransaction(stan);
-
+            
             const expObj = JSON.parse(account.expiryEncrypt);
             const panObj = JSON.parse(account.panEncrypt);
-
+            
             const accountExpDateDecrypted = this.encryption.decrypt(expObj);
             const accPanDecrypted = this.encryption.decrypt(panObj);
             const availableBalance = account.ledger_balance - amount
             
-
-            await this.accountRepository.decrement({ id: account.id },'ledger_balance', amount);
-            await this.accountRepository.increment({ id: account.id },'available_balance', availableBalance);
-            await this.accountRepository.increment({ id: account.id },'hold', amount);
-
-            await this.accountRepository.save(account)
-
-            console.log(`hold: ${account.hold}`);
-            console.log(`ledger_balance: ${account.ledger_balance}`);
-            console.log(`available_balance: ${account.available_balance}`);
-
-                
-            if(
-                amount < account.ledger_balance 
-                || expiryDate == accountExpDateDecrypted 
-                || pan == accPanDecrypted
-                || account.status !== "ACTIVE"
-            ){
-                responseCode = "00"
-                
-                transaction.status = TRANSACTION_STATUS.APPROVED
-
-                account.hold = 0
-                await this.accountRepository.decrement({ id: account.id },'ledger_balance', amount);
-                await this.accountRepository.increment({ id: account.id },'available_balance', availableBalance);
-                
-                await this.accountRepository.save(account)
-                await this.transactionRepository.save(transaction)
-                
-                
-                console.log({
-                    "Authorisation_code": "9384FDC",
-                    "Response_code": responseCode,
-                    "Reason": "All data vaildated."
-                })
-                
-                console.log(`response: ${responseCode}`);
-
-            }
-            else{
-                transaction.status = TRANSACTION_STATUS.DECLINED;
-
-                await this.accountRepository.save(account);
-                await this.transactionRepository.save(transaction);
-                console.log(`response: ${responseCode}`);
-            }
             
-            console.log(`final hold: ${account.hold}`);
-            console.log(`final ledger_balance: ${account.ledger_balance}`);
-            console.log(`final available_balance: ${account.available_balance}`);
+            /*Authorisation process */
+
+            /* -------------------------
+                 SAGA PATTERN STEPS
+            --------------------------*/
+                
+        if(amount > account.available_balance){
+            return this.failTransaction(transaction, "51");
+        }
+            
+        if(account.status !== "ACTIVE"){
+            return this.failTransaction(transaction, "05");
+        }
+
+        if (expiryDate !== accountExpDateDecrypted){
+            return this.failTransaction(transaction,"54")
+        }
+        if (pan !== accPanDecrypted){
+            return this.failTransaction(transaction,"14")
+        }
+
+        /*Place HOLD (local transaction) */
+
+        // await this.placeHold(account.id, amount);
+
+        
+    try {
+
+        /* Record transaction */
+
+        transaction.status = TRANSACTION_STATUS.APPROVED;
+        await this.transactionRepository.save(transaction);
+
+        console.log({
+            responseCode: "00",
+            authCode: "9384FDC",
+            message: 'All data vaildated.'
         });
+
+        } catch (error) {
+
+            /* COMPENSATION STEP */
+
+            // await this.releaseHold(account.id, amount);
+
+            throw error;
+        }
+
+            
+    });
         
         
     });
