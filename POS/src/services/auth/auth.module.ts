@@ -12,6 +12,8 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Transaction } from "../orchestrator/entity/transaction.entity";
 import { EncryptSecurity } from "../orchestrator/encryption/encrypt.security";
 import { Account } from "../account_service/entity/account.entity";
+import { HttpModule } from "@nestjs/axios";
+import { AccountService } from "../account_service/account.service";
 
 
 
@@ -21,6 +23,7 @@ import { Account } from "../account_service/entity/account.entity";
     imports:[
         TypeOrmModule.forFeature([Transaction,Account]),
         PassportModule,
+        HttpModule,
         JwtModule.registerAsync({
             imports:[ConfigModule],
             inject:[ConfigService],
@@ -37,7 +40,7 @@ import { Account } from "../account_service/entity/account.entity";
         MechartService,
         JwtStrategy,
         Conversion,
-        // PartyBankAccount,
+        AccountService,
         IssuerService,
         EncryptSecurity
     ]

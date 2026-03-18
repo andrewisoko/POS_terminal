@@ -4,10 +4,11 @@ import { AccountService } from './account.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Account } from './entity/account.entity';
 import { Transaction } from '../orchestrator/entity/transaction.entity';
+import { EncryptSecurity } from '../orchestrator/encryption/encrypt.security';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Account,Transaction])],
   controllers: [AccountController],
-  providers: [AccountService]
+  providers: [AccountService,EncryptSecurity]
 })
 export class AccountModule {}

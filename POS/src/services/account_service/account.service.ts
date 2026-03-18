@@ -8,6 +8,7 @@ import { NotFoundException } from '@nestjs/common';
 import { EncryptSecurity } from '../orchestrator/encryption/encrypt.security';
 
 
+
 @Injectable()
 export class AccountService {
 
@@ -51,7 +52,6 @@ export class AccountService {
     async failTransaction(transaction: Transaction, responseCode: string) {
 
         transaction.status = TRANSACTION_STATUS.DECLINED;
-    
         await this.transactionRepository.save(transaction);
 
         console.log(
@@ -63,46 +63,53 @@ export class AccountService {
       );
     }
 
+   
     async accountChecks(
         fullName,
         amount,
         transaction,
         expiryDate,
         pan,
-    ){
+        ) {
 
-        const account = await this.findAccount(pan,fullName)
+        const account = await this.findAccount(pan, fullName);
         if (!account) throw new NotFoundException("account not found");
 
-            const expObj = JSON.parse(account.expiryEncrypt);
-            const panObj = JSON.parse(account.panEncrypt);
-                
-            const accountExpDateDecrypted = this.encryption.decrypt(expObj);
-            const accPanDecrypted = this.encryption.decrypt(panObj);
+        const expObj = JSON.parse(account.expiryEncrypt);
+        const panObj = JSON.parse(account.panEncrypt);
 
-                
-            /* -------------------------
-                    
-                SAGA PATTERN STEPS
+        const accountExpDateDecrypted = this.encryption.decrypt(expObj);
+        const accPanDecrypted = this.encryption.decrypt(panObj);
+
+        /* -------------------------
             
-            --------------------------*/
-                
-        if(amount > account.available_balance){
-            return this.failTransaction(transaction, "51");
-        }
-            
-        if(account.status !== "ACTIVE"){
-            return this.failTransaction(transaction, "05");
+             SAGA PATTERN STEPS
+    
+         --------------------------*/
+
+        if (amount > account.available_balance) {
+            await this.failTransaction(transaction, "51");
+            return { action: 'declined', code: '51' };
         }
 
-        if (expiryDate !== accountExpDateDecrypted){
-            return this.failTransaction(transaction,"54")
+        if (account.status !== "ACTIVE") {
+            await this.failTransaction(transaction, "05");
+            return { action: 'declined', code: '05' };
         }
-        if (pan !== accPanDecrypted){
-            return this.failTransaction(transaction,"14")
-        }
-        
-        return "Approved"
 
-        }     
+        if (expiryDate !== accountExpDateDecrypted) {
+            await this.failTransaction(transaction, "54");
+            return { action: 'declined', code: '54' };
+        }
+
+        if (pan !== accPanDecrypted) {
+            await this.failTransaction(transaction, "14");
+            return { action: 'declined', code: '14' };
+        }
+
+        transaction.status = TRANSACTION_STATUS.APPROVED;
+        await this.transactionRepository.save(transaction);
+        return { action: 'approved', code: '00' };
+        }
+ 
     };

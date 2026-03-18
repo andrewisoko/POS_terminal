@@ -5,7 +5,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from 'src/services/orchestrator/entity/transaction.entity';
 import { Account } from 'src/services/account_service/entity/account.entity';
 import { TRANSACTION_STATUS } from 'src/services/orchestrator/entity/transaction.entity';
-import { AccountService } from 'src/services/account_service/account.service';
+import { AccountService} from 'src/services/account_service/account.service';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 
 
@@ -19,6 +21,7 @@ export class IssuerService {
         @InjectRepository(Account) private readonly accountRepository:Repository<Account>,
         private readonly accountService: AccountService,
         private readonly convertToVal: Conversion,
+        private readonly httpService: HttpService,
     ){}
 
     
@@ -109,39 +112,53 @@ export class IssuerService {
             
             /*Authorisation process */
 
-            /* -------------------------
-                 SAGA PATTERN STEPS
-            --------------------------*/
-                
+         
+            const accountChecks = await firstValueFrom(
+                 this.httpService.post(
+                    'http://localhost:3002/api.gateway/account/account-checks',
+                    {
+                        fullName:fullName,
+                        amount:amount,
+                        transaction:transaction,
+                        expiryDate:expiryDate,
+                        pan:pan
+                    }
+                 )) 
 
+            const isApproved = accountChecks.data?.action === 'approved';
+            
+            if (!isApproved) {
+                console.log("transaction not approved")
+                return;
+            }
 
-        /*Place HOLD (local transaction) */
+            /*Place HOLD (local transaction) */
 
-        await this.placeHold(account.id, amount);
+            await this.placeHold(account.id, amount);
 
         
-    try {
+            try {
 
-        /* Record transaction */
+                /* Record transaction */
 
-        transaction.status = TRANSACTION_STATUS.APPROVED;
-        await this.transactionRepository.save(transaction);
+                transaction.status = TRANSACTION_STATUS.APPROVED;
+                await this.transactionRepository.save(transaction);
 
-        console.log({
-            responseCode: "00",
-            authCode: "9384FDC",
-            message: 'All data vaildated.'
-        });
+                console.log({
+                    responseCode: "00",
+                    authCode: "9384FDC",
+                    message: 'All data vaildated.'
+                });
 
-        } catch (error) {
+                } catch (error) {
 
-            /* COMPENSATION STEP */
+                    /* COMPENSATION STEP */
 
-            await this.releaseHold(account.id, amount);
+                    await this.releaseHold(account.id, amount);
 
-            throw error;
-        }
-            
+                    throw error;
+                }
+                
     });
         
         
@@ -150,7 +167,7 @@ export class IssuerService {
         console.log("ISO8583 server running on port 5000");
     });
     
-};
+  };
 
 }
 

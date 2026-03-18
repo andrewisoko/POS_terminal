@@ -15,6 +15,7 @@ import { IssuerService } from "../auth/banks/issuer_service/issuer.service";
 import { Conversion } from "../auth/banks/iso_val_conversions/conversions";
 import { PartyBankAccount } from "../auth/banks/partyBankAccount";
 import { ConfigService } from "@nestjs/config";
+import { AccountService } from "../account_service/account.service";
 
 
 @Module({
@@ -39,6 +40,7 @@ import { ConfigService } from "@nestjs/config";
         EncryptSecurity,
         Conversion,
         PartyBankAccount,
+        AccountService,
         ConfigService
         
     ],
