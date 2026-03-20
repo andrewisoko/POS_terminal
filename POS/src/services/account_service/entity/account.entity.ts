@@ -50,9 +50,6 @@ export class Account{
     @OneToMany(() => Ledger, ledger => ledger.account)
         ledgerEntries: Ledger[];
 
-    @OneToMany(() => Ledger, ledger =>  ledger.idempotency_key)
-        ledgers: Ledger[];
-
     @ManyToOne(() => Party)
         @JoinColumn({ name: 'customer_id' })
         customer: Party;

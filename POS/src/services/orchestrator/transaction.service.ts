@@ -242,7 +242,7 @@ export class TransactionService{
             const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             
             const issuerService = this.issuerService.IssuerBankService();
-            await sleep(2000);  /*waits for response */
+            await sleep(3000);  /*waits for response */
 
 
           /* publishing event on kafka, notification service, ledger service settlement service react to it */

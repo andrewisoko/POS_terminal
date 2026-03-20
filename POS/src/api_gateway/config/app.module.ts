@@ -18,6 +18,8 @@ import { HttpModule } from '@nestjs/axios';
 import { AcquirerModule } from 'src/services/auth/banks/acquirer_service/acquirer.module';
 import { RuleEngine } from 'src/services/rule_engine_service/entity/rule.engine.entity';
 import { Acquirer } from 'src/services/auth/banks/entity/acquirer.entity';
+import { Ledger } from 'src/services/ledger.service/entity/ledger.entity';
+import { LedgerModule } from 'src/services/ledger.service/ledger.module';
 
 
 
@@ -39,7 +41,8 @@ import { Acquirer } from 'src/services/auth/banks/entity/acquirer.entity';
       AccountModule,
       HttpModule,
       WTModule,
-      AcquirerModule
+      AcquirerModule,
+      LedgerModule
     ],
     inject:[ConfigService],
     useFactory:(configService:ConfigService) => {
@@ -58,7 +61,8 @@ import { Acquirer } from 'src/services/auth/banks/entity/acquirer.entity';
           Transaction,
           Account,
           RuleEngine,
-          Acquirer
+          Acquirer,
+          Ledger
         ]
       }
     }

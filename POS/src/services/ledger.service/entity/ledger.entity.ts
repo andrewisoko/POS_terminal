@@ -21,14 +21,9 @@ export class Ledger {
   id: string;
 
   @Column()
-  entry_id: string;
-
-
-  
-  @Column()
   transaction_id: string;
   
-  @Column()
+  @Column({nullable:true})
   account_id: string;
   
   @Column('decimal', { precision: 15, scale: 2 })
@@ -52,7 +47,7 @@ export class Ledger {
   @Column({ type: 'timestamptz' })
   event_timestamp: Date;
   
-  @Column({ length: 19 })
+  @Column({nullable:true})
   masked_pan: string;
   
   @Index({ unique: true })

@@ -38,11 +38,6 @@ export class IssuerService {
 
         };
 
-  
-    /* function that sends the metadata payload to legdger service  */
-    /* adjust the issuer logic and move the account related function to account service */
-    /* internal calls to ledger and account service. */
-
 
     async findTransaction(stan:number){
 
@@ -107,7 +102,7 @@ export class IssuerService {
             
             const account =  await this.accountService.findAccount(pan,fullName);
             const transaction = await this.findTransaction(stan);
-            const availableBalance = account.ledger_balance - amount
+       
             
             
             /*Authorisation process */
@@ -131,6 +126,7 @@ export class IssuerService {
                 console.log("transaction not approved")
                 return;
             }
+            const eventTimeStamp = new Date(Date.now())
 
             /*Place HOLD (local transaction) */
 
@@ -158,7 +154,25 @@ export class IssuerService {
 
                     throw error;
                 }
-                
+        
+        /*call on ledger service once transaction is authorised */
+
+            
+            const maskPan:string = pan.toString().slice(-4).padStart(12,'*')
+            
+            const ledgerDoubleEntry = await firstValueFrom(
+               this.httpService.post(
+               'http://localhost:3002/api.gateway/ledger/double-entry',
+               {
+                   account_id: account.id,
+                   transaction_id:transaction.id,
+                   amount:amount,
+                   currency:"GBP",
+                   eventTimestamp:eventTimeStamp,
+                   maskedPan:maskPan,
+               }
+               )) 
+           console.log("Ledger service response", ledgerDoubleEntry.data)
     });
         
         
