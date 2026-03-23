@@ -245,8 +245,20 @@ export class TransactionService{
             await sleep(3000);  /*waits for response */
 
 
-          /* publishing event on kafka, notification service, ledger service settlement service react to it */
+        /* publishing event on kafka, notification service, ledger service settlement service react to it */
 
+        const settlementEngine = await firstValueFrom(
+            this.httpService.post(
+                'http://localhost:3002/api.gateway/settlement/engine-updates',
+                {id:transaction.id},
+                    {
+                     headers: {
+                    Authorization: `Bearer ${terminalToken}`,
+                    },
+                 },
+
+            )
+        )
 
 
         } catch (error) {

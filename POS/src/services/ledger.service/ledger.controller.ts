@@ -1,11 +1,17 @@
 import { Controller,Post,Body } from '@nestjs/common';
 import { LedgerRecord, LedgerService } from './ledger.service';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/authGuard';
+import { Roles } from '../auth/roles/roles.decorators';
+import { RolesGuard } from '../auth/roles/roles.guard';
+import { Role } from '../web_terminal/entity/wt.entity';
 
 @Controller('ledger')
 export class LedgerController {
     constructor(
         private readonly ledgerService: LedgerService
     ){}
+
 
     @Post("double-entry")
     async saveDoubleEntry(

@@ -37,21 +37,16 @@ export class SettlementService {
 
       const newLedgerBalance = account.ledger_balance = account.available_balance;
       const resettledHold = account.hold = 0;
+    
 
       await this.accountRepository.manager.transaction( async manager =>{
-      manager.save([newLedgerBalance,resettledHold]);
+      manager.save([newLedgerBalance,resettledHold,]);
 
       console.log("ledger balance", account.ledger_balance);
       console.log("hold", account.hold);
 
         return "Account updated";
       })
-        
-      const findTransactionRecord = await this.ledgerRepository.findOne({where:{transaction_id:id}});
-
-      /**update record. */
-
+   
     }
-
-
 }
