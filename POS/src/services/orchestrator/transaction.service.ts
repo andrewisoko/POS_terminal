@@ -119,7 +119,7 @@ export class TransactionService{
 
     async orchestrate( /* transaction service via httpService orchestrates its operations */
     fullRequestData:FullRequestDto,
-    ){
+    ){      
 
         try {
             
@@ -206,9 +206,9 @@ export class TransactionService{
             ); 
             console.log("rule engine:", ruleEngine.data);
 
-            // const decision = ruleEngine.data["action"]
-            // const ruleEngineTable = await this.createRuleEngineTable(decision,transaction);
-            // transaction.ruleEngine = ruleEngineTable;
+            const decision = ruleEngine.data["action"]
+            const ruleEngineTable = await this.createRuleEngineTable(decision,transaction);
+            transaction.ruleEngine = ruleEngineTable;
 
 
             /*banks talking to each other */
@@ -244,7 +244,25 @@ export class TransactionService{
 
 
         /* publishing event on kafka, notification service, ledger service settlement service react to it */
+            
 
+         if( transaction.status === TRANSACTION_STATUS.APPROVED){
+
+         
+            const notificationService = await firstValueFrom(
+                this.httpService.post('http://localhost:3002/api.gateway/notification/kafka-message',
+                    {
+                        message: "Transaction details",
+                        customer:fullRequestData.customer,
+                        amount:fullRequestData.amount,
+                        currency:fullRequestData.currency,
+                        merchant:fullRequestData.merchant,
+                        timestamp:fullRequestData.timestamp,
+                    }
+                )
+            )
+
+         }
 
         
         const settlementEngine = await firstValueFrom(
@@ -263,7 +281,6 @@ export class TransactionService{
         } catch (error) {
             console.log(`Error: ${error}`)
         }
-
     }
     
 }
