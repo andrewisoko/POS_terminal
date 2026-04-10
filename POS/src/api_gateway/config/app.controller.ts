@@ -1,25 +1,15 @@
-// import { Controller, Get } from '@nestjs/common';
-// import { AppService } from './app.service';
 
-// @Controller()
-// export class AppController {
-//   constructor(private readonly appService: AppService) {}
-
-//   @Get()
-//   getHello(): string {
-//     return this.appService.getHello();
-//   }
-// }
-
-// app.controller.ts
-import { Body, Controller,Post} from '@nestjs/common';
+import { Body, Controller,Post, UseGuards} from '@nestjs/common';
 import { FullRequestDto } from './dto/request.data.dto';
 import { AppService } from './app.service';
+import { AuthGuard } from '@nestjs/passport';
+
 
 @Controller()
 export class AppController {
   constructor( private readonly appService:AppService ){}
 
+  @UseGuards(AuthGuard('card-jwt'))
   @Post()
   RedirectTransactionController(
     @Body() dataDto:FullRequestDto

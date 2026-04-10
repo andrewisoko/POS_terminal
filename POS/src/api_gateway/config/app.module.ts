@@ -23,6 +23,7 @@ import { LedgerModule } from 'src/services/ledger.service/ledger.module';
 import { SettlementEngineModule } from 'src/services/settlement/settlement_engine/settlement.module';
 import { NotificationModule } from 'src/services/notification.service/notification.module';
 import { ClientKafka } from '@nestjs/microservices';
+import { cardJwtStrategy } from 'src/services/auth/card/card.jwt.strategy';
 
 
 
@@ -53,6 +54,7 @@ import { ClientKafka } from '@nestjs/microservices';
     useFactory:(configService:ConfigService) => {
       // console.log(configService.get<string>('DB_USER'))
       return{
+        secret: configService.get<string>("JWT_CARD.KEY"),
         type: 'postgres',
         host: configService.get<string>('DB_HOST'), 
         port: parseInt(configService.get<string>('DB_PORT') ?? '5432', 10),
@@ -74,6 +76,6 @@ import { ClientKafka } from '@nestjs/microservices';
   })
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,cardJwtStrategy],
 })
 export class AppModule {}

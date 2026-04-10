@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { PassportModule } from "@nestjs/passport";
 import { Module } from "@nestjs/common";
 import { MerchantController } from "./merchant_service/merchant.controller";
-import { MechartService } from "./merchant_service/merchant.service";
 import { TerminalJwtStrategy } from "./terminal.jwt.strategy";
 import { Conversion } from "./banks/iso_val_conversions/conversions";
 import { IssuerService } from './banks/issuer_service/issuer.service';
@@ -39,7 +38,6 @@ import { IssuerJwtStrategy } from "./banks/issuer_service/Issuer.jwt.strategy";
     ], 
     controllers:[MerchantController],
     providers:[
-        MechartService,
         TerminalJwtStrategy,
         IssuerJwtStrategy,
         Conversion,
