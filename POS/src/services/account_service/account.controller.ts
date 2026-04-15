@@ -2,7 +2,6 @@ import { Controller,Post,Body } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { UseGuards } from '@nestjs/common';
 import { Role } from '../web_terminal/entity/wt.entity';
-import { JwtAuthGuard } from '../auth/authGuard';
 import { RolesGuard } from '../auth/roles/roles.guard';
 import { Roles } from '../auth/roles/roles.decorators';
 import { AuthGuard } from '@nestjs/passport';
