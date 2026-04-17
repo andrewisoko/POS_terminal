@@ -15,6 +15,7 @@ import { Ledger } from "../ledger.service/entity/ledger.entity";
 import { IssuerJwtStrategy } from "./banks/issuer_service/Issuer.jwt.strategy";
 import { AccountSchema } from "../account_service/document/account.doc";
 import { MongooseModule } from "@nestjs/mongoose";
+import { IssuerRuleService } from "./banks/issuer_service/isuuer_rules/issuer.rules.service";
 
 
 /* initial auth approach will be a simple jwt authorisation. The app initially verifies if web POS terminal contains the token.*/
@@ -39,12 +40,14 @@ import { MongooseModule } from "@nestjs/mongoose";
     ], 
     controllers:[MerchantController],
     providers:[
+        HttpModule,
         TerminalJwtStrategy,
         IssuerJwtStrategy,
         Conversion,
         AccountService,
         IssuerService,
-        EncryptSecurity
+        EncryptSecurity,
+        IssuerRuleService
     ]
 })
 

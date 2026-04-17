@@ -13,8 +13,7 @@ import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from 'src/services/web_terminal/entity/wt.entity';
 import { EncryptSecurity } from 'src/services/orchestrator/encryption/encrypt.security';
-
-
+import { SetAgreements } from './isuuer_rules/issuer.rules.service';
 
 
 @Injectable()
@@ -30,7 +29,14 @@ export class IssuerService {
         private readonly encryption: EncryptSecurity
     ){}
 
-    
+
+    /*----------------------------*/
+    /*----------------------------*/
+    /*------SET UPFUNCTIONS-------*/
+    /*----------------------------*/
+    /*----------------------------*/
+
+
     parseIsoMessage(buffer) {
 
         const Iso8583 = require('iso_8583');
@@ -44,6 +50,20 @@ export class IssuerService {
 
         };
 
+    contractConditions( setAgreements:SetAgreements ){
+        
+        const conditions: SetAgreements[] = [];
+        conditions.push(setAgreements);
+
+        if ( conditions[0].split_agreement === 'percentage' || conditions[0].split_agreement === 'amount' ){
+
+            return conditions;
+        }else{
+            throw new Error (' contract improperly filled ')
+        }
+
+
+    }
 
     async findTransaction(stan:number){
 
@@ -73,62 +93,38 @@ export class IssuerService {
             );
             console.log("Hold released",amount)
         };
+
+
+    /*--------------------------------------------*/
+    /*--------------------------------------------*/
+    /*------CALL ACCOUNT SERVICE FUNCTION---------*/
+    /*--------------------------------------------*/
+    /*--------------------------------------------*/    
     
+    async callAccountService(
+        amount,
+        transaction,
+        expiryDate,
+        rawPan,
+        issuerToken,
+        account
+    ){
 
-    IssuerBankService(){
-
-    
-        const net = require('net');
-
-        const server = net.createServer((socket) => {
-
-        socket.on('data',async (data) => {
-
-            console.log("Received ISO message:", data.toString('hex'));
-
-            let responseCode = "51";
-            const isoMsg = this.parseIsoMessage(data);
-            
-            
-            const pan = isoMsg[2];
-            const fullName = isoMsg[45];
-            const stan = Number( isoMsg[11] );
-            const amount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
-            const expiryDate = this.convertToVal.reverseExpiry(isoMsg[14]);
-            const panJson = JSON.parse(pan) 
-             const rawPan = this.encryption.decrypt(panJson)
-            
-            const account =  await this.accountService.findAccount(pan);
-            const transaction = await this.findTransaction(stan);
-            
-            const issuerToken = this.jwtService.sign({
-                account:account.id,
-                stan:stan,
-                role:Role.ISSUER
-            })
-            
-            /* Assuming the issuer bank check came all correct: Customer account exists and is active, sufficient funds / available credit, PIN validation (if online PIN) */
-
-            /* contract here */
-            
-            /* Authorisation process  */
-
-         
-            const accountChecks = await firstValueFrom(
-                 this.httpService.post(
-                    'http://localhost:3002/api.gateway/account/account-checks',
-                    {
-                        amount:amount,
-                        transaction:transaction,
-                        expiryDate:expiryDate,
-                        pan: rawPan
-                    },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${issuerToken}`
-                        }
+        const accountChecks = await firstValueFrom(
+                this.httpService.post(
+                'http://localhost:3002/api.gateway/account/account-checks',
+                {
+                    amount:amount,
+                    transaction:transaction,
+                    expiryDate:expiryDate,
+                    pan: rawPan
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${issuerToken}`
                     }
-                 )) 
+                }
+                )) 
 
             const isApproved = accountChecks.data?.action === 'approved';
             
@@ -163,10 +159,27 @@ export class IssuerService {
                     await this.releaseHold(account.id, amount);
                     throw error;
                 }
-        
-        /*call on ledger service once transaction is authorised */
+    
+    }
 
-            
+    
+    
+    /*-------------------------------------------*/
+    /*-------------------------------------------*/
+    /*------CALL LEDGER SERVICE FUNCTION---------*/
+    /*-------------------------------------------*/
+    /*-------------------------------------------*/
+    
+
+    async callLedgerService(
+        pan,
+        account,
+        transaction,
+        amount,
+        eventTimeStamp,
+        issuerToken
+    ){
+                 
             const maskPan:string = pan.toString().slice(-4).padStart(12,'*')
             
             const ledgerDoubleEntry = await firstValueFrom(
@@ -187,12 +200,115 @@ export class IssuerService {
                }
                )) 
            console.log("Ledger service response", ledgerDoubleEntry.data)
-    });
+    }
+
+
+    /*------------------------------*/
+    /*------------------------------*/
+    /*--------MAIN FUNCTION---------*/
+    /*------------------------------*/
+    /*------------------------------*/
+
+
+    IssuerBankService( setAgreements?:SetAgreements ){
+
+        let amount;
+        let account;
+
+        const net = require('net');
+
+        const server = net.createServer((socket) => {
+
+        socket.on('data',async (data) => {
+
+            console.log("Received ISO message:", data.toString('hex'));
+
+            let responseCode = "51";
+            const isoMsg = this.parseIsoMessage(data);
+            
+            
+            amount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
+            const pan = isoMsg[2];
+            const fullName = isoMsg[45];
+            const stan = Number( isoMsg[11] );
+            const expiryDate = this.convertToVal.reverseExpiry(isoMsg[14]);
+            const panJson = JSON.parse(pan) 
+            const rawPan = this.encryption.decrypt(panJson)
+            
+            
+            account =  await this.accountService.findAccount(pan);
+            const transaction = await this.findTransaction(stan);
+            const eventTimeStamp = new Date(Date.now());
+            
+            const issuerToken = this.jwtService.sign({
+                account:account.id,
+                stan:stan,
+                role:Role.ISSUER
+            })
+            
+         
+            
+            /* Assuming the issuer bank check came all correct: Customer account exists and is active, sufficient funds / available credit, PIN validation (if online PIN) */
+ 
+            /* contract here */
+            
+            if ( setAgreements ){
+
+                const setAgreementProps = this.contractConditions(setAgreements);
+
+                    for( const contractAccount of setAgreementProps[0].accounts ){
+                        
+                        let count;
+
+                        amount = (setAgreementProps[0].percentages[count] / 100) * this.convertToVal.reverseIsoAmount(isoMsg[4]);
+
+                       this.callAccountService(
+                        amount,
+                        transaction,
+                        expiryDate,
+                        rawPan,
+                        issuerToken,
+                        contractAccount
+                    )
+
+                    this.callLedgerService(
+                        pan,
+                        contractAccount,
+                        transaction,
+                        amount,
+                        eventTimeStamp,
+                        issuerToken
+                        )
+
+                        count =+ 1
+                    }
+
+
+            }
+
+        /* Authorisation process  */
+
+            await this.callAccountService(
+                amount,
+                transaction,
+                expiryDate,
+                rawPan,
+                issuerToken,
+                account
+            )
+
+
+        
+        /*call on ledger service once transaction is authorised */
+
+   
         
         
-    });
-    server.listen(5000, () => {
-        console.log("ISO8583 server running on port 5000");
+        });
+        server.listen(5000, () => {
+            console.log("ISO8583 server running on port 5000");
+        });
+
     });
     
   };
