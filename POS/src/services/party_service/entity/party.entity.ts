@@ -22,10 +22,10 @@ export enum STATUS{
 @Entity("Party")
 export class Party {
 
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryColumn({type:'text'})
     id:string;
 
-    @Column('varchar', { length: 20, default: 'Johnson Handsome' })
+    @Column('varchar', { length: 20, default: 'Name Surname' })
     fullName:string;
 
     @Column('varchar', { length: 90, default: '10 London Street CH15 8XF UNITED KINGDOM' })

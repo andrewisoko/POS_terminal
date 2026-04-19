@@ -11,7 +11,6 @@ import { TransactionModule } from 'src/services/orchestrator/transaction.module'
 import { Party } from 'src/services/party_service/entity/party.entity';
 import { Transaction } from 'src/services/orchestrator/entity/transaction.entity';
 import { RuleEngineModule } from 'src/services/rule_engine_service/rule.engine.module';
-import { AccountModule } from 'src/services/account_service/account.module';
 import { TokenisationModule } from 'src/services/tokenisation_service/tokenisation.module';
 import { HttpModule } from '@nestjs/axios';
 import { AcquirerModule } from 'src/services/auth/banks/acquirer_service/acquirer.module';
@@ -22,6 +21,7 @@ import { LedgerModule } from 'src/services/ledger.service/ledger.module';
 import { SettlementEngineModule } from 'src/services/settlement/settlement_engine/settlement.module';
 import { NotificationModule } from 'src/services/notification.service/notification.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AccountModule } from 'src/services/account_service/account.module';
 import { cardJwtStrategy } from 'src/services/auth/card/card.jwt.strategy';
 
 
@@ -35,20 +35,18 @@ import { cardJwtStrategy } from 'src/services/auth/card/card.jwt.strategy';
       envFilePath:__dirname + '/../../../.env'
     },
   ),
+  TransactionModule,
+  RuleEngineModule,
+  TokenisationModule,
+  AuthModule,
+  WTModule,
+  AcquirerModule,
+  AccountModule,
+  LedgerModule,
+  SettlementEngineModule,
+  NotificationModule,
   TypeOrmModule.forRootAsync({
-    imports:[
-      TransactionModule,
-      RuleEngineModule,
-      TokenisationModule,
-      AuthModule,
-      // AccountModule,
-      HttpModule,
-      WTModule,
-      AcquirerModule,
-      LedgerModule,
-      SettlementEngineModule,
-      NotificationModule,
-    ],
+    imports:[ConfigModule],
     inject:[ConfigService],
     useFactory:(configService:ConfigService) => {
       // console.log(configService.get<string>('DB_USER'))
@@ -76,7 +74,8 @@ import { cardJwtStrategy } from 'src/services/auth/card/card.jwt.strategy';
     inject: [ConfigService],
     useFactory:(configService:ConfigService) => {
       return {
-        uri: configService.get<string>('MONGODB_URI') 
+        uri: configService.get<string>('MONGODB_URI'),
+          dbName: 'bank',
       }
     }
   })

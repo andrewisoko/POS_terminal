@@ -41,7 +41,6 @@ export class IssuerRulesController {
 
 
     this.issuerRulesService.contractData( input as ContractProps );
-    console.log( 'contract received' );
     return 'contract received';
   }
 

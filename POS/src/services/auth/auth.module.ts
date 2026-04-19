@@ -16,6 +16,7 @@ import { IssuerJwtStrategy } from "./banks/issuer_service/Issuer.jwt.strategy";
 import { AccountSchema } from "../account_service/document/account.doc";
 import { MongooseModule } from "@nestjs/mongoose";
 import { IssuerRuleService } from "./banks/issuer_service/isuuer_rules/issuer.rules.service";
+import { IssuerRulesController } from "./banks/issuer_service/isuuer_rules/issuer.rules.controller";
 
 
 /* initial auth approach will be a simple jwt authorisation. The app initially verifies if web POS terminal contains the token.*/
@@ -38,7 +39,7 @@ import { IssuerRuleService } from "./banks/issuer_service/isuuer_rules/issuer.ru
             },
         }),
     ], 
-    controllers:[MerchantController],
+    controllers:[MerchantController,IssuerRulesController],
     providers:[
         HttpModule,
         TerminalJwtStrategy,
@@ -48,7 +49,8 @@ import { IssuerRuleService } from "./banks/issuer_service/isuuer_rules/issuer.ru
         IssuerService,
         EncryptSecurity,
         IssuerRuleService
-    ]
+    ],
+    exports:[IssuerService]
 })
 
 export class AuthModule {}

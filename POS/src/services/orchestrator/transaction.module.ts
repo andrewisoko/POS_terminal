@@ -10,8 +10,7 @@ import { EncryptSecurity } from "./encryption/encrypt.security";
 import { Party } from "../party_service/entity/party.entity";
 import { Terminal } from "../web_terminal/entity/wt.entity";
 import { RuleEngine } from "../rule_engine_service/entity/rule.engine.entity";
-import { IssuerService } from "../auth/banks/issuer_service/issuer.service";
-import { Conversion } from "../auth/banks/iso_val_conversions/conversions";
+import { AuthModule } from "../auth/auth.module";
 import { ConfigService } from "@nestjs/config";
 import { AccountService } from "../account_service/account.service";
 import { Ledger } from "../ledger.service/entity/ledger.entity";
@@ -24,6 +23,7 @@ import { AccountSchema } from "../account_service/document/account.doc";
 @Module({
     imports:[
         HttpModule,
+        AuthModule,
         JwtModule.registerAsync({
                 imports:[ConfigModule],
                 inject:[ConfigService],
@@ -51,9 +51,7 @@ import { AccountSchema } from "../account_service/document/account.doc";
     providers:[
         TokenisationService,
         TransactionService,
-        IssuerService,
         EncryptSecurity,
-        Conversion,
         AccountService,
         ConfigService,  
     ],

@@ -2,22 +2,22 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types, HydratedDocument } from 'mongoose';
 
 export enum ACCOUNT_STATUS {
-    ACTIVE = 'ACTIVE',
-    BLOCKED = 'BLOCKED',
-    CLOSED = 'CLOSED',
+    ACTIVE = 'active',
+    BLOCKED = 'blocked',
+    CLOSED = 'closed',
 }
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'account' })
 export class Account extends Document {
     
     @Prop({ type: String, default: 'Johnson Handsome' })
         fullName: string;
 
-    @Prop({ type: String, default: 'mataDo20^jssjhehaiqhey' })
-        accountNumberEncrypt: string;
+    @Prop({ type: Number, default: 0 })
+        accountNumber: number;
 
-    @Prop({ type: String, default: 'fekwjdekdoSISISIS' })
-        panEncrypt: string;
+    @Prop({ type: String, default: '' })
+        pan: string;
 
     @Prop({ type: Number, precision: 15, scale: 2, default: 0 })
         ledger_balance: number;
@@ -31,8 +31,8 @@ export class Account extends Document {
     @Prop({ type: String, maxlength: 3, default: 'GBP' })
         currency: string;
 
-    @Prop({ type: String, default: '99/33' })
-        expiryEncrypt: string;
+    @Prop({ type: String, default: '' })
+        expiry: string;
 
     @Prop({
         type: String,
@@ -41,14 +41,14 @@ export class Account extends Document {
     })
         status: ACCOUNT_STATUS;
 
-    @Prop({ type: [Types.ObjectId], ref: 'Transaction', default: [] })
-        transactions: Types.ObjectId[];
+    @Prop({ type: [String], default: [] })
+        transactions: string[];
 
     @Prop({ type: [Types.ObjectId], ref: 'Ledger', default: [] })
         ledgerEntries: Types.ObjectId[];
 
-    @Prop({ type: Types.ObjectId, ref: 'Party' })
-        customer: Types.ObjectId;
+    @Prop({ type: String })
+        customer: string;
 
     @Prop({ type: Date, default: Date.now })
         createdAt: Date;

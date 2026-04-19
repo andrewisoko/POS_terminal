@@ -34,6 +34,6 @@ export class FullRequestDto {
   customerID?: string;
 
   @IsOptional()
-  @IsIn(['ACTIVE', 'BLOCKED', 'CLOSED'])
-  accountStatus?: 'ACTIVE' | 'BLOCKED' | 'CLOSED';
+  @IsIn(['active', 'blocked', 'closed'])
+  accountStatus?: 'active'| 'blocked'| 'closed';
 }

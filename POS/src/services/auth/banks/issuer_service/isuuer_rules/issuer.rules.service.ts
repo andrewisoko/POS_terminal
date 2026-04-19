@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { IssuerService } from "../issuer.service";
+import { SetAgreements } from "../interfaces/set-agreements.interface";
 
 
 export interface ContractProps{
@@ -19,41 +20,41 @@ export interface ContractProps{
 
 } 
 
-export interface SetAgreements {
-
-    split_agreement: string,
-    accounts: string[], 
-    percentages: number[], 
-    amounts: number[],
-    
-    }
+export type { SetAgreements } from "../interfaces/set-agreements.interface";
 
 @Injectable()
 export class IssuerRuleService{
     constructor(private readonly issuerService: IssuerService) {}
 
+
     contractData( contractProps: ContractProps ){
 
-    let percentages;
-    let amounts;
+    try {
+        
+        let percentages;
+        let amounts;
 
-    const accounts = [contractProps.sender, ...contractProps.receiver];
+        const accounts = [contractProps.sender, ...contractProps.receiver];
 
-    if ( contractProps.sender_percentage && contractProps.receiver_percentage ){
-        percentages = [contractProps.sender_percentage,...contractProps.receiver_percentage]
-    }
-    if ( contractProps.sender_amount && contractProps.receiver_amount ){
-        amounts =  [contractProps.sender_amount,...contractProps.receiver_amount]
-    }
-    
-    const setAgreements:SetAgreements = {
-
-        split_agreement: contractProps.split_agreement,
-        accounts: accounts, 
-        percentages: percentages, 
-        amounts: amounts,
+        if ( contractProps.sender_percentage && contractProps.receiver_percentage ){
+            percentages = [contractProps.sender_percentage,...contractProps.receiver_percentage]
         }
+        if ( contractProps.sender_amount && contractProps.receiver_amount ){
+            amounts =  [contractProps.sender_amount,...contractProps.receiver_amount]
+        }
+        
+        const setAgreements:SetAgreements = {
 
-    return this.issuerService.IssuerBankService( setAgreements )
-    }
-}
+            split_agreement: contractProps.split_agreement,
+            accounts: accounts, 
+            percentages: percentages, 
+            amounts: amounts,
+            }
+
+        return this.issuerService.IssuerBankService( setAgreements )
+
+        } catch (error) {
+        console.log('Error issuer rules service at', error)
+        };
+    };
+};

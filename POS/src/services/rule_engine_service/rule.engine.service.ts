@@ -30,7 +30,7 @@ export class RuleEngineService{
             const checkMerchant = await this.terminalRepository.findOne({ where:{subject: engineCheckRequest.merchant }});
             if (! checkMerchant ) throw new NotFoundException("merchant not found");
 
-            if ( engineCheckRequest.accountStatus !== "ACTIVE" ) throw new UnauthorizedException("account not active")
+            if ( engineCheckRequest.accountStatus !== "active" ) throw new UnauthorizedException("account not active")
             
             if( engineCheckRequest.amount >= 150000 ) throw new UnauthorizedException("Invalid amount");  /*balance check to be added.*/
             if ( engineCheckRequest.currency !== "GBP" ) throw new UnauthorizedException("Invalid currency");

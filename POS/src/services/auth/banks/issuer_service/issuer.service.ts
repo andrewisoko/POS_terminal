@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { Conversion } from '../iso_val_conversions/conversions';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,11 +13,14 @@ import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from 'src/services/web_terminal/entity/wt.entity';
 import { EncryptSecurity } from 'src/services/orchestrator/encryption/encrypt.security';
-import { SetAgreements } from './isuuer_rules/issuer.rules.service';
+import { SetAgreements } from './interfaces/set-agreements.interface';
 
 
 @Injectable()
-export class IssuerService {
+export class IssuerService implements OnModuleInit {
+
+    private setAgreements?: SetAgreements;
+    private server: any;
 
     constructor(
         @InjectRepository(Transaction) private readonly transactionRepository:Repository<Transaction>,
@@ -26,7 +29,6 @@ export class IssuerService {
         private readonly convertToVal: Conversion,
         private readonly httpService: HttpService,
         private readonly jwtService:JwtService,
-        private readonly encryption: EncryptSecurity
     ){}
 
 
@@ -130,7 +132,7 @@ export class IssuerService {
             
             if (!isApproved) {
                 console.log("transaction at issuer not approved")
-                return;
+                return false;
             }
             const eventTimeStamp = new Date(Date.now())
 
@@ -159,7 +161,8 @@ export class IssuerService {
                     await this.releaseHold(account.id, amount);
                     throw error;
                 }
-    
+
+            return true;
     }
 
     
@@ -212,153 +215,164 @@ export class IssuerService {
 
     IssuerBankService( setAgreements?:SetAgreements ){
 
-        let amount;
-        let account;
+        this.setAgreements = setAgreements;
 
-        const net = require('net');
+        this.server.once('connection', (socket) => {
 
-        const server = net.createServer((socket) => {
+            socket.on('data', async (data) => {
 
-        socket.on('data',async (data) => {
+                let amount;
+                let account;
 
-            console.log("Received ISO message:", data.toString('hex'));
+                console.log("Received ISO message:", data.toString('hex'));
 
-            let responseCode = "51";
-            const isoMsg = this.parseIsoMessage(data);
+                let responseCode = "51";
+                const isoMsg = this.parseIsoMessage(data);
+                
+                
+                amount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
+                const pan = isoMsg[2];
+                const fullName = isoMsg[45];
+                const stan = Number( isoMsg[11] );
+                const expiryDate = this.convertToVal.reverseExpiry(isoMsg[14]);
+                const rawPan = pan;
+                
+                
+                account =  await this.accountService.findAccount(pan);
+                const transaction = await this.findTransaction(stan);
+                const eventTimeStamp = new Date(Date.now());
+                
+                const issuerToken = this.jwtService.sign({
+                    account:account.id,
+                    stan:stan,
+                    role:Role.ISSUER
+                })
+                
             
-            
-            amount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
-            const pan = isoMsg[2];
-            const fullName = isoMsg[45];
-            const stan = Number( isoMsg[11] );
-            const expiryDate = this.convertToVal.reverseExpiry(isoMsg[14]);
-            const panJson = JSON.parse(pan) 
-            const rawPan = this.encryption.decrypt(panJson)
-            
-            
-            account =  await this.accountService.findAccount(pan);
-            const transaction = await this.findTransaction(stan);
-            const eventTimeStamp = new Date(Date.now());
-            
-            const issuerToken = this.jwtService.sign({
-                account:account.id,
-                stan:stan,
-                role:Role.ISSUER
-            })
-            
-         
-            
-            /* Assuming the issuer bank check came all correct: Customer account exists and is active, sufficient funds / available credit, PIN validation (if online PIN) */
- 
-            /* contract here */
-            
-            if ( setAgreements ){
-
-                console.log('set of agreements received', setAgreements);
-                const setAgreementProps = this.contractConditions(setAgreements);
-
-                    for( const contractAccount of setAgreementProps[0].accounts ){
-                        
-                        let count;
-                        const prevAssignedAmount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
-
-                        if( setAgreementProps[0].percentages.length > 1 ){
-
-                            amount = ((setAgreementProps[0].percentages[count] / 100) * prevAssignedAmount);
+                
+                /* Assuming the issuer bank check came all correct: Customer account exists and is active, sufficient funds / available credit, PIN validation (if online PIN) */
     
-                            console.log( 'contract amount', amount )
-                            console.log( 'current count', count )
-                            console.log( 'id account', contractAccount )
-    
-                           await this.callAccountService(
-                            amount,
-                            transaction,
-                            expiryDate,
-                            rawPan,
-                            issuerToken,
-                            contractAccount
-                            );
-    
-                            await this.callLedgerService(
-                            pan,
-                            contractAccount,
-                            transaction,
-                            amount,
-                            eventTimeStamp,
-                            issuerToken
-                            );
-    
-                            count =+ 1
-                        }else if( setAgreementProps[0].amounts.length > 1 ){
+                /* contract here */
+
+                const setAgreements = this.setAgreements;
+
+                if ( setAgreements ){
+
+
+                    console.log('set of agreements received', setAgreements);
+                    const setAgreementProps = this.contractConditions(setAgreements);
+
+                        for( const contractAccount of setAgreementProps[0].accounts ){
                             
-                            const sumAmounts = setAgreementProps[0].amounts.reduce( ( acc, curr ) => acc + curr, 0 );
-                            console.log( 'sum amount', sumAmounts );
-                            
-                            if( sumAmounts !==  prevAssignedAmount ) throw new Error( 'Invalid amount split [issuer service] ');
-                            amount = setAgreementProps[0].amounts[count];
+                            let count;
+                            const prevAssignedAmount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
 
-                            console.log( 'contract amount', amount )
-                            console.log( 'current count', count )
-                            console.log( 'id account', contractAccount )
-    
-                           await this.callAccountService(
-                            amount,
-                            transaction,
-                            expiryDate,
-                            rawPan,
-                            issuerToken,
-                            contractAccount
-                            );
-    
-                            await this.callLedgerService(
-                            pan,
-                            contractAccount,
-                            transaction,
-                            amount,
-                            eventTimeStamp,
-                            issuerToken
-                            );
-    
-                            count =+ 1
-    
+                            if( setAgreementProps[0].percentages.length > 1 ){
+
+                                amount = ((setAgreementProps[0].percentages[count] / 100) * prevAssignedAmount);
+        
+                                console.log( 'contract amount', amount )
+                                console.log( 'current count', count )
+                                console.log( 'id account', contractAccount )
+        
+                                const approved = await this.callAccountService(
+                                    amount,
+                                    transaction,
+                                    expiryDate,
+                                    rawPan,
+                                    issuerToken,
+                                    account
+                                );
+                                if (!approved) return;
+        
+                                await this.callLedgerService(
+                                pan,
+                                contractAccount,
+                                transaction,
+                                amount,
+                                eventTimeStamp,
+                                issuerToken
+                                );
+        
+                                count =+ 1
+                            }else if( setAgreementProps[0].amounts.length > 1 ){
+                                
+                                const sumAmounts = setAgreementProps[0].amounts.reduce( ( acc, curr ) => acc + curr, 0 );
+                                console.log( 'sum amount', sumAmounts );
+                                
+                                if( sumAmounts !==  prevAssignedAmount ) throw new Error( 'Invalid amount split [issuer service] ');
+                                amount = setAgreementProps[0].amounts[count];
+
+                                console.log( 'contract amount', amount )
+                                console.log( 'current count', count )
+                                console.log( 'id account', contractAccount )
+        
+                               const approved = await this.callAccountService(
+                                    amount,
+                                    transaction,
+                                    expiryDate,
+                                    rawPan,
+                                    issuerToken,
+                                    account
+                                );
+
+                                if (!approved) return;
+        
+                                await this.callLedgerService(
+                                pan,
+                                contractAccount,
+                                transaction,
+                                amount,
+                                eventTimeStamp,
+                                issuerToken
+                                );
+        
+                                count =+ 1
+        
+                            }
                         }
-                    }
 
-            }else{
-                
-                /* Authorisation process  */
-        
-                await this.callAccountService(
-                    amount,
-                    transaction,
-                    expiryDate,
-                    rawPan,
-                    issuerToken,
-                    account
-                );
-        
-                
-                /*call on ledger service once transaction is authorised */
-        
-                await this.callLedgerService(
-                    pan,
-                    account,
-                    transaction,
-                    amount,
-                    eventTimeStamp,
-                    issuerToken
-                );
+                }else{
+                    
+                    /* Authorisation process  */
+            
+                    const approved = await this.callAccountService(
+                        amount,
+                        transaction,
+                        expiryDate,
+                        rawPan,
+                        issuerToken,
+                        account
+                    );
 
-            }
-        
+                    if (!approved) return;
+            
+                    
+                    /*call on ledger service once transaction is authorised */
+            
+                    await this.callLedgerService(
+                        pan,
+                        account,
+                        transaction,
+                        amount,
+                        eventTimeStamp,
+                        issuerToken
+                    );
+
+                }
+            
+            });
+
         });
-        server.listen(5000, () => {
+    }
+
+    onModuleInit() {
+        const net = require('net');
+        this.server = net.createServer();
+        this.server.listen(5000, () => {
             console.log("ISO8583 server running on port 5000");
         });
-
-    });
-    
-  };
+    }
 
 }
 

@@ -25,7 +25,7 @@ export class RuleEngineController{
         amount:number;
         currency: string;
         merchant: string;
-        accountStatus:"ACTIVE"|"BLOCKED"|"CLOSED";
+        accountStatus:"active"|"blocked"|"closed";
         customerID: string;
         }
     ){

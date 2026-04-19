@@ -7,7 +7,7 @@ import { NotFoundException } from '@nestjs/common';
 import { EncryptSecurity } from '../orchestrator/encryption/encrypt.security';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { AccountDocument } from './document/account.doc';
+import { ACCOUNT_STATUS, AccountDocument } from './document/account.doc';
 
 
 
@@ -41,15 +41,8 @@ export class AccountService {
 
     async findAccount( pan:string ){
 
-        // await this.decryptPanByFullName(fullName);
-
-            const account = await this.accountModel.findOne( {panEncrypt: pan } );
+            const account = await this.accountModel.findOne( {pan: pan } );
             if (!account) throw new NotFoundException("account not found");
-
-            const panEncrypt = JSON.stringify(this.encryption.encrypt(pan));
-            account.panEncrypt = panEncrypt;
-
-            await account.save();
 
         return account
     };
@@ -80,11 +73,8 @@ export class AccountService {
         const account = await this.findAccount( pan );
         if (!account) throw new NotFoundException("account not found");
 
-        const expObj = JSON.parse(account.expiryEncrypt);
-        const panObj = JSON.parse(account.panEncrypt);
-
-        const accountExpDateDecrypted = this.encryption.decrypt(expObj);
-        const accPanDecrypted = this.encryption.decrypt(panObj);
+        const accountExpDate = account.expiry;
+        const accountPan = account.pan;
 
         /* -------------------------
             
@@ -97,17 +87,17 @@ export class AccountService {
             return { action: 'declined', code: '51' };
         }
 
-        if (account.status !== "ACTIVE") {
+        if (account.status !== ACCOUNT_STATUS.ACTIVE ) {
             await this.failTransaction(transaction, "05");
             return { action: 'declined', code: '05' };
         }
 
-        if (expiryDate !== accountExpDateDecrypted) {
+        if (expiryDate !== accountExpDate) {
             await this.failTransaction(transaction, "54");
             return { action: 'declined', code: '54' };
         }
 
-        if (pan !== accPanDecrypted) {
+        if (pan !== accountPan) {
             await this.failTransaction(transaction, "14");
             return { action: 'declined', code: '14' };
         }

@@ -24,6 +24,10 @@ export class AcquirerService {
         const fee = 0.74;
         const merchantNetAmount = acqData.amount - fee;
 
+        try {
+            
+     
+
         const acquirerTable = await this.acquirerRepository.create(
             {
                 gross_amount:acqData.amount,
@@ -68,7 +72,7 @@ export class AcquirerService {
                 4: isoAmount,
                 11: stanString, /*System Trace Audit Number.*/
                 14: isoExpDate,
-                41: acqData.terminalid,
+                41: acqData.terminalid.padEnd(8, ' '),
                 43: acqData.merchant.padEnd(40, " "),
                 45: acqData.fullName,
                 49: "826" /*this is the ISO 4217 numeric currency code ecquivalent of GBP */
@@ -79,6 +83,7 @@ export class AcquirerService {
             
 
             const isoBuffer = iso.getBufferMessage();
+            if (isoBuffer.error) throw new Error(`ISO8583 encoding error: ${isoBuffer.error}`);
             
 
             // add 2-byte length header
@@ -97,6 +102,8 @@ export class AcquirerService {
         console.log('Response:', data.toString('hex'));
         });
         
-
+           } catch (error) {
+            console.log('Error acquirer service at', error)
+        }
     }
 }

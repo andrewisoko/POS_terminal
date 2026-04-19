@@ -4,7 +4,6 @@ import { Transaction, TRANSACTION_STATUS } from "./entity/transaction.entity";
 import { Repository } from "typeorm";
 import { Party } from "../party_service/entity/party.entity";
 import { Terminal } from "../web_terminal/entity/wt.entity";
-import { Account } from "../account_service/document/account.doc";
 import { EncryptSecurity } from "./encryption/encrypt.security";
 import { HttpService } from "@nestjs/axios";
 import { FullRequestDto } from "src/api_gateway/config/dto/request.data.dto";
@@ -22,7 +21,7 @@ export interface EngineCheckRequest {
     amount: number;
     currency: string;
     merchant: string;
-    accountStatus: "ACTIVE" | "BLOCKED" | "CLOSED";
+    accountStatus: "active" | "blocked" | "closed";
     customerID: string;
 }
 
@@ -69,10 +68,16 @@ export class TransactionService{
     ){
         try {
 
+            
+            const user = await this.partyRepository.create({
+                id:customer
+            })
+            await this.partyRepository.save(user)
+
             const customerData = await this.partyRepository.findOne({ where:{ id:customer }})
             if(! customerData ) throw new NotFoundException("Party not found");
        
-            const accountData = await this.accountModel.findOne({ id:account })
+            const accountData = await this.accountModel.findOne({ _id:account })
             if( ! accountData ) throw new NotFoundException("Account not found");
 
             const terminalData = await this.terminalRepository.findOne({ where:{ id:terminal }})
@@ -87,13 +92,18 @@ export class TransactionService{
                 amount:amount,
                 merchant:merchant,
                 customer:customerData,
-                // account:accountData,
+                account:accountData._id.toString(),
                 terminal:terminalData,
                 panEncrypt:encryptedPan,
                 expiryEncrypt:encryptExpiryDate,
 
                 })
                 await this.transactionRepository.save(transaction)
+
+                await this.accountModel.updateOne(
+                    { _id: account },
+                    { $push: { transactions: transaction.id } }
+                );
 
                 return transaction
             
@@ -198,7 +208,7 @@ export class TransactionService{
                         amount: fullRequestData.amount,
                         currency: fullRequestData.currency,
                         merchant: fullRequestData.merchant,
-                        accountStatus: fullRequestData.accountStatus,
+                        accountStatus: (await this.accountModel.findById(fullRequestData.account))?.status ?? fullRequestData.accountStatus,
                         customerID: fullRequestData.customerID,
                     },
                     {
@@ -216,7 +226,6 @@ export class TransactionService{
 
 
             /*banks talking to each other */
-
 
             const acquirerService = await firstValueFrom(
                 this.httpService.post(
@@ -239,19 +248,22 @@ export class TransactionService{
 
                 )
             )
+
             
             const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             
      
             const issuerService = this.issuerService.IssuerBankService();
-            await sleep(3000);  /*waits for response */
 
-            
-        /* publishing event on kafka*/
-
-
-        const approvedTrn = await this.transactionRepository.findOne({ where:{ id:transaction.id } });
-        if ( !approvedTrn ) throw new NotFoundException( "Transaction not found" );
+            /* poll until issuer updates the transaction status */
+            let approvedTrn: Transaction | null = null;
+            for (let i = 0; i < 20; i++) {
+                await sleep(500);
+                approvedTrn = await this.transactionRepository.findOne({ where:{ id:transaction.id } });
+                if (approvedTrn && approvedTrn.status !== TRANSACTION_STATUS.PENDING) break;
+            }
+            if ( !approvedTrn ) throw new NotFoundException( "Transaction not found" );
+            console.log("Transaction status after issuer:", approvedTrn.status);
 
         if( approvedTrn.status === TRANSACTION_STATUS.APPROVED){
 
@@ -275,20 +287,20 @@ export class TransactionService{
                 )
             )
 
-         }
-        
-        const settlementEngine = await firstValueFrom(
-            this.httpService.post(
-                'http://localhost:3002/api.gateway/settlement/engine-updates',
-                {id:transaction.id},
-                    {
-                     headers: {
-                    Authorization: `Bearer ${terminalToken}`,
-                    },
-                 },
+            const settlementEngine = await firstValueFrom(
+                this.httpService.post(
+                    'http://localhost:3002/api.gateway/settlement/engine-updates',
+                    {id:transaction.id},
+                        {
+                         headers: {
+                        Authorization: `Bearer ${terminalToken}`,
+                        },
+                     },
 
+                )
             )
-        )
+
+         }
 
 
         } catch (error) {
