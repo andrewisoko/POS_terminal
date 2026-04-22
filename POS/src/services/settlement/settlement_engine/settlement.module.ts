@@ -14,7 +14,8 @@ import { AccountSchema } from 'src/services/account_service/document/account.doc
         MongooseModule.forFeature([ {name:'Account', schema: AccountSchema} ])
 ],
     controllers:[SettlementController],
-    providers:[SettlementService]
+    providers:[SettlementService],
+    exports:[SettlementService]
 
 })
 export class SettlementEngineModule {}

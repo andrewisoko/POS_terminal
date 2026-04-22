@@ -14,7 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Role } from 'src/services/web_terminal/entity/wt.entity';
 import { conditions } from './isuuer_rules/issuer.rules.service';
 import { EncryptSecurity } from 'src/services/orchestrator/encryption/encrypt.security';
-import { error } from 'console';
+import { SettlementService } from 'src/services/settlement/settlement_engine/settlement.service';
 
 
 
@@ -27,10 +27,11 @@ export class IssuerService implements OnModuleInit {
         @InjectRepository(Transaction) private readonly transactionRepository:Repository<Transaction>,
         @InjectModel('Account') private readonly accountModel: Model<AccountDocument>,
         private readonly accountService: AccountService,
-        private readonly convertToVal: Conversion,
         private readonly httpService: HttpService,
         private readonly jwtService:JwtService,
-        private readonly encrypt:EncryptSecurity
+        private readonly settlementService: SettlementService,
+        private readonly encrypt:EncryptSecurity,
+        private readonly convertToVal: Conversion,
     ){}
 
 
@@ -84,6 +85,52 @@ export class IssuerService implements OnModuleInit {
             );
             console.log("Hold released",amount)
         };
+    
+    async settlementSupport (transactionId){
+        return await this.settlementService.updates( transactionId )
+    }
+
+    async findTargetAccount( accountId:string ){
+        
+        const accountsData = await this.accountModel.findOne({ _id:accountId }).exec();
+        if (! accountsData) throw new NotFoundException("Account for contract agreement not found. ");
+        
+        return accountsData;
+
+        };
+
+
+    async createTransactionContract (
+        accountId:string,
+        amount:number,
+        terminalId:string,
+        rawPan:string,
+        expiryDate:string
+
+    ){
+
+        const accountData = await this.findTargetAccount(accountId)
+
+        const newTransaction = await this.transactionRepository.create({
+            currency:"GBP",
+            amount:amount,
+            merchant:"TEST MERCHANT LONDON GB",
+            customer: { id: accountData.customer },
+            account:accountId,
+            terminal: { id: terminalId },
+            panEncrypt: JSON.stringify(this.encrypt.encrypt(rawPan.toString())),
+            expiryEncrypt: JSON.stringify(this.encrypt.encrypt(expiryDate.toString())),
+        })
+
+        await this.transactionRepository.save(newTransaction);
+
+            await this.accountModel.updateOne(
+            { _id: accountData._id },
+            { $push: { transactions: newTransaction.id } }
+        );
+
+        return newTransaction
+    };
 
 
     /*--------------------------------------------*/
@@ -91,14 +138,16 @@ export class IssuerService implements OnModuleInit {
     /*------CALL ACCOUNT SERVICE FUNCTION---------*/
     /*--------------------------------------------*/
     /*--------------------------------------------*/    
+
+
     
     async callAccountService(
         amount,
         transaction,
         expiryDate,
-        rawPan,
+        pan,
         issuerToken,
-        account
+        accountId
     ){
 
         const accountChecks = await firstValueFrom(
@@ -108,7 +157,7 @@ export class IssuerService implements OnModuleInit {
                     amount:amount,
                     transaction:transaction,
                     expiryDate:expiryDate,
-                    pan: rawPan
+                    pan: pan
                 },
                 {
                     headers: {
@@ -126,9 +175,7 @@ export class IssuerService implements OnModuleInit {
             const eventTimeStamp = new Date(Date.now())
 
             /*Place HOLD (local transaction) */
-            await this.placeHold(account.id, amount);
-            console.log('account id issuer service', account.id )
-
+            await this.placeHold(accountId, amount);
         
             try {
 
@@ -147,49 +194,14 @@ export class IssuerService implements OnModuleInit {
 
                     /* COMPENSATION STEP */
 
-                    await this.releaseHold(account.id, amount);
+                    await this.releaseHold(accountId, amount);
                     throw error;
                 }
 
             return true;
-    }
+    };
 
 
-    async createTransactionContract (
-        accountId:string,
-        amount:number,
-        terminalID:string,
-        rawPan:string,
-        expiryDate:string
-
-    ){
-
-
-     const accountsData = await this.accountModel.findOne({ _id:accountId }).exec()
-     if (! accountsData) throw new NotFoundException("Account for contract agreement not found. ") 
-
-                const newTransaction = await this.transactionRepository.create({
-                    currency:"GBP",
-                    amount:amount,
-                    merchant:"TEST MERCHANT LONDON GB",
-                    customer: { id: accountsData.customer },
-                    account:accountId,
-                    terminal: { id: terminalID },
-                    panEncrypt: JSON.stringify(this.encrypt.encrypt(rawPan.toString())),
-                    expiryEncrypt: JSON.stringify(this.encrypt.encrypt(expiryDate.toString())),
-                })
-
-                await this.transactionRepository.save(newTransaction);
-
-                   await this.accountModel.updateOne(
-                    { _id: accountsData._id },
-                    { $push: { transactions: newTransaction.id } }
-                );
-        
-        return newTransaction
-    }
-
-    
     
     /*-------------------------------------------*/
     /*-------------------------------------------*/
@@ -244,8 +256,7 @@ export class IssuerService implements OnModuleInit {
 
             socket.on('data', async (data) => {
 
-                let amount = 0;
-                let account;
+              
 
                 console.log("Received ISO message:", data.toString('hex'));
 
@@ -253,16 +264,16 @@ export class IssuerService implements OnModuleInit {
                 const isoMsg = this.parseIsoMessage(data);
                 
                 
-                amount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
+                const wholeAmount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
                 const pan = isoMsg[2];
                 const fullName = isoMsg[45];
                 const stan = Number( isoMsg[11] );
                 const expiryDate = this.convertToVal.reverseExpiry(isoMsg[14]);
-                const rawPan = pan;
-                const terminalID = isoMsg[41]
+                // const rawPan = pan;
+                const terminalId = isoMsg[41]
                 
                 
-                account =  await this.accountService.findAccount(pan);
+                const account =  await this.accountService.findAccount(pan);
                 const transaction = await this.findTransaction(stan);
                 const eventTimeStamp = new Date(Date.now());
                 
@@ -282,101 +293,111 @@ export class IssuerService implements OnModuleInit {
 
                 if ( conditions.length > 0 ){
 
+                    let count = 0;
+                    let splitAmount = 0;
+                    let contractTransaction;
 
-                    console.log('set of agreements', conditions[0] );
+                    // console.log('set of agreements', conditions[0] );
                     const setAgreements = conditions[0];
 
-                        for( const contractAccount of setAgreements.accounts ){
+
+                        for( const contractAccountId of setAgreements.accounts ){
                             
-                            console.log('accounts list', setAgreements.accounts );
-                            let count = 0;
-                            let contractTransaction
-
-                            const prevAssignedAmount = this.convertToVal.reverseIsoAmount(isoMsg[4]);
-                            const prevTransaction = await this.findTransaction(stan)
-
+                            const prevTransaction = await this.findTransaction(stan);
+                            const targetAccount = await this.findTargetAccount(contractAccountId);
 
                             if( setAgreements.percentages.length > 1 ){
                            
-                                amount = (( setAgreements.percentages[count] / 100) * prevAssignedAmount );
+                                const splitAmount = (( setAgreements.percentages[count] / 100) * wholeAmount );
+                                prevTransaction.amount = splitAmount;
 
                                 contractTransaction = count < 1 ? prevTransaction 
                                 : await this.createTransactionContract(
-                                    contractAccount,
-                                    amount,
-                                    terminalID,
-                                    rawPan,
+                                    contractAccountId,
+                                    splitAmount,
+                                    terminalId,
+                                    targetAccount.pan,
                                     expiryDate
-                                )
+                                );
 
-                                if(! contractTransaction ) throw new Error ("contract transaction failed at creation")
-                                contractTransaction.amount = amount;
+                                // console.log('contract transaction', contractTransaction );
 
                         
                                 const approved = await this.callAccountService(
-                                    amount,
+                                    splitAmount,
                                     contractTransaction,
                                     expiryDate,
-                                    rawPan,
+                                    targetAccount.pan,
                                     issuerToken,
-                                    contractAccount
+                                    contractAccountId
                                 );
                                 if (!approved) return;
         
                                 await this.callLedgerService(
-                                pan,
-                                contractAccount,
+
+                                targetAccount.pan,
+                                contractAccountId,
                                 transaction,
-                                amount,
+                                splitAmount,
                                 eventTimeStamp,
                                 issuerToken
                                 );
 
+                                if(count > 0){
+                                    this.settlementSupport(contractTransaction.id) //releasing receiver account hold and updating ledger balance. 
+                                };
+                                
                                 count =+ 1;
-            
+
 
                             }else if( conditions[0].amounts.length > 1 ){
                                 
                                 const sumAmounts = conditions[0].amounts.reduce( ( acc, curr ) => acc + curr, 0 );
                                 console.log( 'sum amount', sumAmounts );
                                 
-                                if( sumAmounts !==  prevAssignedAmount ) throw new Error( 'Invalid amount split [issuer service] ');
-                                amount = conditions[0].amounts[count];
+                                if( sumAmounts !==  wholeAmount ) throw new Error( 'Invalid amount split [issuer service] ');
+                                splitAmount = conditions[0].amounts[count];
 
-                                console.log( 'contract amount', amount );
+                                console.log( 'contract amount', splitAmount );
 
                                 contractTransaction = count < 1 ? prevTransaction 
                                 : await this.createTransactionContract(
-                                    contractAccount,
-                                    amount,
-                                    terminalID,
-                                    rawPan,
+                                    contractAccountId,
+                                    splitAmount,
+                                    terminalId,
+                                    targetAccount.pan,
                                     expiryDate
                                 )
 
                                 if(! contractTransaction ) throw new Error ("contract transaction failed at creation")
-                                contractTransaction.amount = amount;
+                                contractTransaction.amount = splitAmount;
                                
                                const approved = await this.callAccountService(
-                                    amount,
+                                    splitAmount,
                                     contractTransaction,
                                     expiryDate,
-                                    rawPan,
+                                    targetAccount.pan,
                                     issuerToken,
-                                    contractAccount
+                                    contractAccountId
                                 );
 
                                 if (!approved) return;
         
                                 await this.callLedgerService(
-                                pan,
-                                contractAccount,
+
+                                targetAccount.pan,
+                                contractAccountId,
                                 transaction,
-                                amount,
+                                splitAmount,
                                 eventTimeStamp,
                                 issuerToken
                                 );
-        
+                                
+                    
+                                if(count > 0){
+                                    this.settlementSupport(contractTransaction.id);
+                                }
+
                                 count =+ 1
         
                             }
@@ -387,10 +408,10 @@ export class IssuerService implements OnModuleInit {
                     /* Authorisation process  */
             
                     const approved = await this.callAccountService(
-                        amount,
+                        wholeAmount,
                         transaction,
                         expiryDate,
-                        rawPan,
+                        pan,
                         issuerToken,
                         account
                     );
@@ -404,7 +425,7 @@ export class IssuerService implements OnModuleInit {
                         pan,
                         account,
                         transaction,
-                        amount,
+                        wholeAmount,
                         eventTimeStamp,
                         issuerToken
                     );
