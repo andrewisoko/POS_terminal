@@ -4,6 +4,7 @@ import { Transaction } from "src/services/orchestrator/entity/transaction.entity
 export enum Role {
     ISSUER = "issuer",
     TERMINAL = "terminal",
+    CONTRACT = "contract",
     NULL = "null"
 }
 

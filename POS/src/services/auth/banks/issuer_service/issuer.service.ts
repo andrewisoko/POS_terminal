@@ -297,7 +297,7 @@ export class IssuerService implements OnModuleInit {
                     let count = 0;
                     let splitAmount = 0;
                     let contractTransaction;
-                    const setAgreements = conditions[0];
+                    const setAgreements = conditions[0];  // for now only one contract at time.
 
             
                         for( const contractAccountId of setAgreements.accounts ){

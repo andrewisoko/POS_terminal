@@ -13,6 +13,7 @@ import { HttpModule } from "@nestjs/axios";
 import { AccountService } from "../account_service/account.service";
 import { Ledger } from "../ledger.service/entity/ledger.entity";
 import { IssuerJwtStrategy } from "./banks/issuer_service/Issuer.jwt.strategy";
+import { ContractJwtStrategy } from "./banks/issuer_service/contract.jwt.strategy";
 import { AccountSchema } from "../account_service/document/account.doc";
 import { MongooseModule } from "@nestjs/mongoose";
 import { IssuerRuleService } from "./banks/issuer_service/isuuer_rules/issuer.rules.service";
@@ -45,6 +46,7 @@ import { SettlementService } from "../settlement/settlement_engine/settlement.se
         HttpModule,
         TerminalJwtStrategy,
         IssuerJwtStrategy,
+        ContractJwtStrategy,
         Conversion,
         AccountService,
         IssuerService,

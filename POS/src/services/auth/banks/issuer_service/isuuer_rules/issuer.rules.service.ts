@@ -69,4 +69,9 @@ export class IssuerRuleService{
     console.log('Error issuer rules service at', error);
     };
     };
+
+    cancelContract(){
+        conditions.pop()
+        return 'contract cancelled'
+    }
 };
