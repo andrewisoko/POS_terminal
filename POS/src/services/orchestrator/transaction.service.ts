@@ -261,9 +261,27 @@ export class TransactionService{
             let approvedTrn: Transaction | null = null;
 
             if (conditions.length > 0 && new Date(Date.now()) > new Date(conditions[0].expiryTime) ){
-            
                 transaction.status = TRANSACTION_STATUS.DECLINED;
-                throw new Error("transaction declined");// wrote this to handle expired contract following with new contract sent on, at the same time setting transaction status to fail and avoid going throw unnecessary additional processes.
+
+                  const notificationService = await firstValueFrom(
+                        this.httpService.post('http://localhost:3002/api.gateway/notification/kafka-message',
+                            {
+                                message: "transaction declined",
+                                customer:fullRequestData.customer,
+                                amount:fullRequestData.amount,
+                                currency:fullRequestData.currency,
+                                merchant:fullRequestData.merchant,
+                                timestamp:fullRequestData.timestamp,
+                            },
+                            {
+                                headers: {
+                                Authorization: `Bearer ${terminalToken}`,
+                                },
+                            },
+                            
+                        )
+                    );
+                throw new Error("check expiry date of contract provided");// wrote this to handle expired contract following with new contract sent on, at the same time setting transaction status to fail and avoid going throw unnecessary additional processes.
                 
 
              }else{

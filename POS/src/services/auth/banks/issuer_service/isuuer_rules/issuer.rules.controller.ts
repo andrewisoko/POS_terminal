@@ -1,9 +1,6 @@
 import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { ContractProps, IssuerRuleService } from './issuer.rules.service';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/services/auth/roles/roles.guard';
-import { Roles } from 'src/services/auth/roles/roles.decorators';
-import { Role } from 'src/services/web_terminal/entity/wt.entity';
 
 
 
@@ -37,8 +34,7 @@ export class IssuerRulesController {
 
   constructor ( private readonly issuerRulesService: IssuerRuleService){}
 
-  @UseGuards(AuthGuard('contract-jwt'), RolesGuard)
-  @Roles(Role.CONTRACT)
+  @UseGuards(AuthGuard('contract-jwt'))
   @Post('graphql')
    async handleGraphQL( @Body() body: GraphQLRequest ) {
 
